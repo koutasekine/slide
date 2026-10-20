@@ -943,9 +943,20 @@ function build(){
 function fit(c){
   const cs=getComputedStyle(c);
   const innerW=c.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
-  const wide=[...c.querySelectorAll('.katex-display,pre,table,img')];
+  const wide=[...c.querySelectorAll('pre,table,img')];
+  const disp=[...c.querySelectorAll('.katex-display')];
+  /* 式番号(align・equation など)の付いた式は、番号の字形が箱から 1〜2px はみ出すだけで scrollWidth が増えるので、
+     式の本体(.katex-base)が枠の中に収まり、番号(.katex-tag)と重ならないかを箱の位置で調べる */
+  const dispOk=d=>{
+    if(!d.getClientRects().length) return true;              /* \pause の切り替え用に隠している版 */
+    if(d.offsetWidth>innerW+1) return false;
+    const tag=d.querySelector('.katex-tag');
+    if(!tag) return d.scrollWidth<=d.clientWidth+1;
+    const r=d.getBoundingClientRect(),t=tag.getBoundingClientRect(),k=(r.width/d.offsetWidth)||1;
+    return [...d.querySelectorAll('.katex-base')].every(b=>{const q=b.getBoundingClientRect();return q.left>=r.left-k&&q.right<=t.left+k;});
+  };
   const ok=()=>c.scrollHeight<=c.clientHeight+1&&c.scrollWidth<=c.clientWidth+1&&
-    wide.every(e=>e.scrollWidth<=e.clientWidth+1&&e.offsetWidth<=innerW+1);
+    wide.every(e=>e.scrollWidth<=e.clientWidth+1&&e.offsetWidth<=innerW+1)&&disp.every(dispOk);
   c.style.fontSize=BASE+'px';
   if(ok()) return;
   let lo=0.4,hi=1;
