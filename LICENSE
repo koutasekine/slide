@@ -1,0 +1,49 @@
+このリポジトリには、ライセンスの異なる 4 つの部分があります。
+
+1. プログラム(slide.html の HTML・CSS・JavaScript。下記 2〜4 を除く)
+   MIT License(本文は下記)
+   Copyright (c) 2026 Kouta Sekine
+
+2. 配色「えんじ」とその色違いの「紫紺」「ペールブルー」のデザイン
+   対象:えんじ帯・線・ページ番号の箱などの配置と配色(slide.html の .slide.enji に関する CSS が再現するもの)、
+         および slide.html に埋め込まれた表紙の「2.71828」の画像
+   Copyright (c) Yuka Hiratsuka (formerly Yuka Sekine)
+   Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)
+   https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+3. 同梱の KaTeX(slide.html に埋め込まれた katex.min.js・katex.min.css・フォント)
+   MIT License
+   Copyright (c) 2013-2020 Khan Academy and other contributors
+   KaTeX のライセンス本文は slide.html 冒頭のコメントにあります。
+
+4. 同梱の Prism(slide.html に埋め込まれたコード色付け用の prism-core と言語定義)
+   MIT License
+   Copyright (c) 2012 Lea Verou
+   Prism のライセンス本文は slide.html 冒頭のコメントにあります。
+
+--------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Kouta Sekine
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The MIT License above does not apply to part 2 (the "えんじ" / "紫紺" / "ペールブルー" design and the
+"2.71828" image), which is licensed only under CC BY-NC-ND 4.0.
