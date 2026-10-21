@@ -648,15 +648,22 @@ function splitOutside(L,sep,useCols){
 function splitSteps(L){
   return splitOutside(L,reStepLine,true).parts;
 }
-function renderSlide(src){
-  const segs=splitSteps(src.split('\n'));
-  STEPN=0;let h='';
+/* 行の並び L を +-+-+- で区切って描く。スライドの一番外側と、段組の各段・囲み枠の本文で使う。
+   段階の番号は原稿の上から順に振る。最初の区間は、外側で今描いている区間と同時に出る */
+function stepBlocks(L){
+  const segs=splitSteps(L),outer=SEGSTEP;let h='';
   segs.forEach((seg,k)=>{
     if(k>0) STEPN++;
-    const st=STEPN;SEGSTEP=st;
+    const st=k===0?outer:STEPN;SEGSTEP=st;
     const body=blocks(seg,false);
     h+=k===0?body:'<div class="step" data-s="'+st+'">'+body+'</div>';
   });
+  SEGSTEP=outer;
+  return h;
+}
+function renderSlide(src){
+  STEPN=0;SEGSTEP=0;
+  const h=stepBlocks(src.split('\n'));
   return {html:h,maxStep:STEPN};
 }
 function applyStep(el,step){
@@ -865,12 +872,12 @@ function blocks(L,tight){
         if(depth===0&&/^\s*\|\|\|\s*$/.test(u)){parts.push([]);continue;}
         parts[parts.length-1].push(u);
       }
-      out.push('<div class="cols">'+parts.map((q,k)=>'<div class="col" style="flex:'+(ratio[k]||1)+' 1 0">'+blocks(q,false)+'</div>').join('')+'</div>');
+      out.push('<div class="cols">'+parts.map((q,k)=>'<div class="col" style="flex:'+(ratio[k]||1)+' 1 0">'+stepBlocks(q)+'</div>').join('')+'</div>');
       i=end+1;continue;
     }
     if(m=l.match(/^\s*:::\s*box\b\s*(.*)$/)){
       const title=m[1].trim(),{body,end}=collectFenced(L,i+1);
-      out.push('<div class="box">'+(title?'<div class="box-t">'+inline(title)+'</div>':'')+'<div class="box-b">'+blocks(body,false)+'</div></div>');
+      out.push('<div class="box">'+(title?'<div class="box-t">'+inline(title)+'</div>':'')+'<div class="box-b">'+stepBlocks(body)+'</div></div>');
       i=end+1;continue;
     }
     if(m=l.match(reHead)){
