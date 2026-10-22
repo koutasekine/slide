@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>スライド</title>
+<title>シンプルスライド</title>
 <!--
   スライド (index.html)
   Markdown を --- 区切りで書くと全画面スライドになる単一 HTML。
@@ -81,8 +81,20 @@ button:hover,select:hover{background:#f0f0ec}
 button.primary{background:#1f5fa8;border-color:#1f5fa8;color:#fff}
 button.primary:hover{background:#184c87}
 main{flex:1;display:flex;min-height:0}
-#editor{flex:1 1 44%;min-width:0;margin:0;border:0;border-right:1px solid #cfcfca;padding:14px 16px;
-  font:15px/1.6 var(--mono);resize:none;outline:none;tab-size:4;background:#fff;color:#222}
+#edwrap{flex:1 1 44%;min-width:0;position:relative;border-right:1px solid #cfcfca;background:#fff}
+/* 編集欄の色分け:入力は textarea で受け、その文字を透明にして、真下に同じ位置で色付きの文字(#hl)を描く */
+#editor,#hl{position:absolute;top:0;left:0;bottom:0;box-sizing:border-box;margin:0;border:0;padding:14px 16px;
+  font:15px/1.6 var(--mono);tab-size:4;letter-spacing:normal;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal}
+#editor{right:0;width:100%;height:100%;resize:none;outline:none;background:transparent;color:transparent;caret-color:#222;z-index:1}
+#editor::selection{color:transparent;background:rgba(31,95,168,.25)}
+#hl{right:0;overflow:hidden;color:#222;pointer-events:none;z-index:0}
+#hl .h-head{color:#8b1a2b}
+#hl .h-sep{color:#1d4ed8;background:#e8eef8}
+#hl .h-step,#hl .h-pause{color:#c2410c;background:#fbeee6}
+#hl .h-math{color:#1a6b3a}
+#hl .h-code{color:#6b3fa0}
+#hl .h-blk{color:#0b5c8a}
+#hl .h-img,#hl .h-mk{color:#9a9a9a}
 #side{flex:1 1 56%;min-width:0;display:flex;flex-direction:column;padding:12px;gap:8px}
 #previewBox{flex:1;min-height:0;position:relative;outline:none}
 header .warn{font-size:13px;color:#c8321e}
@@ -95,7 +107,7 @@ header .stat{font-size:13px;color:#2a7a3a}
 .hdl.nw,.hdl.se{cursor:nwse-resize}.hdl.ne,.hdl.sw{cursor:nesw-resize}
 .nav{display:flex;gap:10px;align-items:center;justify-content:center;font-size:14px}
 .nav span{min-width:6em;text-align:center}
-@media (max-width:820px){main{flex-direction:column}#editor{flex:1 1 50%;border-right:0;border-bottom:1px solid #cfcfca}}
+@media (max-width:820px){main{flex-direction:column}#edwrap{flex:1 1 50%;border-right:0;border-bottom:1px solid #cfcfca}}
 
 /* スライド本体:論理寸法 1600x900 を縮尺して表示 */
 .viewport{position:absolute;inset:0;overflow:hidden}
@@ -291,7 +303,7 @@ footer a{color:#777}
   <input type="file" id="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
 </header>
 <main>
-  <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+  <div id="edwrap"><pre id="hl" aria-hidden="true"></pre><textarea id="editor" spellcheck="false" autocomplete="off"></textarea></div>
   <div id="side">
     <div id="previewBox" tabindex="0"><div class="viewport"><div class="slide"><div class="deco"></div><div class="head"></div><div class="content"></div><div class="layer"></div><div class="pageno"></div></div></div></div>
     <div class="nav">
@@ -1037,6 +1049,53 @@ function syncFromCaret(){
   const k=caretSlide();
   if(k!==cur){cur=k;drawPreview();}
 }
+/* ---------- 編集欄の色分け ---------- */
+const hl=$('hl');
+const hlEsc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const hlSpan=(c,t)=>'<span class="'+c+'">'+hlEsc(t)+'</span>';
+const reHlInline=/(`+)[^`]*?\1|\$\$.+?\$\$|\\\[.+?\\\]|\\\(.+?\\\)|\$(?!\s)(?:\\.|[^$\\])+?\$|!\[[^\]]*\](?:\[[^\]]*\]|\([^)]*\))(?:\{[^}]*\})?|\{\.(?:red|yellow|blue)\}|\*\*|\+\+|~~|\*|\\./g;
+function hlInline(l){
+  let h='',i=0,m;reHlInline.lastIndex=0;
+  while((m=reHlInline.exec(l))){
+    const t=m[0];
+    h+=hlEsc(l.slice(i,m.index));
+    if(m[1]) h+=hlSpan('h-code',t);
+    else if(t[0]==='$'||/^\\[[(]/.test(t)) h+=hlSpan('h-math',t);
+    else if(t[0]==='!') h+=hlSpan('h-img',t);
+    else if(t[0]==='\\') h+=hlEsc(t);
+    else h+=hlSpan('h-mk',t);
+    i=m.index+t.length;
+  }
+  return h+hlEsc(l.slice(i));
+}
+function highlight(){
+  const L=ed.value.split('\n'),out=[];let fence=null,math=null;
+  for(const l of L){
+    if(fence){out.push(hlSpan('h-code',l));if(fence.test(l)) fence=null;continue;}
+    if(math){out.push(hlSpan(rePause.test(l)?'h-pause':'h-math',l));if(mathClosesAt(l,math)) math=null;continue;}
+    const f=l.match(reFence);
+    if(f){fence=new RegExp('^\\s*'+(f[1][0]==='`'?'`':'~')+'{'+f[1].length+',}\\s*$');out.push(hlSpan('h-code',l));continue;}
+    const mo=mathOpenAt(l);
+    if(mo){math=mo;out.push(hlSpan('h-math',l));continue;}
+    if(/^---\s*$/.test(l)) out.push(hlSpan('h-sep',l));
+    else if(reStepLine.test(l)) out.push(hlSpan('h-step',l));
+    else if(rePause.test(l)) out.push(hlSpan('h-pause',l));
+    else if(reHead.test(l)) out.push(hlSpan('h-head',l));
+    else if(/^\s*:::/.test(l)||/^\s*\|\|\|\s*$/.test(l)) out.push(hlSpan('h-blk',l));
+    else out.push(hlInline(l));
+  }
+  hl.innerHTML=out.join('\n')+'\n ';   /* 末尾の改行で高さがずれないように */
+  syncHL();
+}
+function syncHL(){
+  hl.style.right=Math.max(0,ed.offsetWidth-ed.clientWidth)+'px';   /* textarea のスクロールバーの幅だけ狭める */
+  hl.scrollTop=ed.scrollTop;
+}
+let hlRAF=0;
+function queueHL(){if(!hlRAF) hlRAF=requestAnimationFrame(()=>{hlRAF=0;highlight();});}
+ed.addEventListener('input',queueHL);
+ed.addEventListener('scroll',()=>{hl.scrollTop=ed.scrollTop;});
+if(window.ResizeObserver) new ResizeObserver(syncHL).observe(ed);
 let timer=null,editGen=0;   /* editGen:編集のたびに増える。保存中に編集があったかの判定に使う */
 ed.addEventListener('input',()=>{
   editGen++;
@@ -1574,7 +1633,7 @@ function loadText(text,name){
   editGen++;   /* 保存の書き込み中に別の内容へ切り替わったことを、保存側で見分けるため */
   const r=splitImages(text);
   IMAGES=imgMap(r.imgs);sel=null;
-  ed.value=r.text;setName(name||'');
+  ed.value=r.text;highlight();setName(name||'');
   saveDoc();
   build();cur=0;drawPreview();
   ed.setSelectionRange(0,0);ed.scrollTop=0;
@@ -1726,6 +1785,7 @@ $('theme').value=theme;
   }
 }
 setName(fileName);
+highlight();
 build();drawPreview();
 /* 印刷(Ctrl+P を含む)に備えて KaTeX のフォントを先に読み込んでおく */
 if(document.fonts){try{document.fonts.forEach(f=>{f.load().catch(()=>{});});}catch(e){}}
