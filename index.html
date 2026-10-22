@@ -301,6 +301,7 @@ footer a{color:#777}
   <button id="btnShowFirst" class="primary" title="最初のスライドから全画面で発表">▶ 最初から</button>
   <button id="btnShow" class="primary" title="表示中のスライドから全画面で発表">▶ 現在のスライドから</button>
   <input type="file" id="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+  <input type="file" id="designFile" accept=".json,application/json" hidden>
 </header>
 <main>
   <div id="edwrap"><pre id="hl" aria-hidden="true"></pre><textarea id="editor" spellcheck="false" autocomplete="off"></textarea></div>
@@ -311,7 +312,7 @@ footer a{color:#777}
     </div>
   </div>
 </main>
-<footer>シンプルスライド — Markdown と数式で書くスライド。単一 HTML、データはどこにも送信されません。MIT License, Copyright (c) 2026 Kouta Sekine.(配色「えんじ」「紫紺」「ペールブルー」のデザイン:CC BY-NC-ND 4.0, Yuka Hiratsuka) <a href="https://sapp.jp" target="_blank" rel="noopener">S Apps</a></footer>
+<footer>シンプルスライド — Markdown と数式で書くスライド。単一 HTML、データはどこにも送信されません。MIT License, Copyright (c) 2026 Kouta Sekine. <a href="https://sapp.jp" target="_blank" rel="noopener">S Apps</a></footer>
 <div id="show" hidden><div class="viewport"><div class="slide"><div class="deco"></div><div class="head"></div><div class="content"></div><div class="layer"></div><div class="pageno"></div><canvas id="ink"></canvas></div></div><div id="blackout" hidden></div><div id="grid" hidden><div class="gwrap"></div></div><div id="endmsg" hidden>スライド ショーの最後です。クリックすると終了します。</div><div id="laser"></div><div id="pcur"></div>
 <div id="tools">
   <button data-m="pointer" title="ポインタ(クリックで次へ)">ポインタ</button>
@@ -1007,9 +1008,11 @@ function draw(vp,idx,noPlace){
   const head=el.querySelector('.head'), enji=theme==='enji'||theme==='shikon'||theme==='pale';
   el.classList.toggle('shikon',theme==='shikon');
   el.classList.toggle('pale',theme==='pale');
-  el.classList.toggle('board',theme==='board');
+  const dsg=curDesign();
+  el.classList.toggle('board',theme==='board'||(!!dsg&&dsg.base==='board'));
+  el.classList.toggle('custom',!!dsg);
   el.classList.toggle('enji',enji);
-  el.classList.toggle('cover',enji&&s.title);
+  el.classList.toggle('cover',(enji||!!dsg)&&s.title);
   c.className='content'+(s.title?' title':'');
   c.innerHTML=s.html;
   head.innerHTML='';
@@ -1129,8 +1132,8 @@ const KEY_DOC='slide.html:doc';           /* 本文と画像をまとめて保�
 const MARK='<!-- slide.html: 以下は貼り付けた画像のデータ(編集しないでください) -->';
 function refsIn(text){const r=new Set(),re=/!\[[^\]]*\]\[([^\]\s]+)\]/g;let m;while((m=re.exec(text))) r.add(m[1]);return r;}
 function usedImages(){const o={};for(const k of refsIn(ed.value)) if(IMAGES[k]) o[k]=IMAGES[k];return o;}
-const WARN={save:'',tab:'',syntax:''};
-function setWarn(kind,t){WARN[kind]=t;$('warn').textContent=[WARN.syntax,WARN.save,WARN.tab].filter(Boolean).join(' / ');}
+const WARN={save:'',tab:'',syntax:'',design:''};
+function setWarn(kind,t){WARN[kind]=t;$('warn').textContent=[WARN.syntax,WARN.save,WARN.tab,WARN.design].filter(Boolean).join(' / ');}
 /* 本文と使っている画像を 1 つのキーに書く。失敗したときは前回の(本文と画像が対応した)状態が残る */
 function saveDoc(){
   const doc=JSON.stringify({md:ed.value,imgs:usedImages()});
@@ -1459,7 +1462,7 @@ const ink=$('ink'),ictx=ink.getContext('2d'),tools=$('tools'),pcur=$('pcur');
 const PAL={white:['#000000','#d42040','#d08a00','#0066cc'],board:['#ffffff','#ff7046','#f8e070','#5aa9ff']};
 const LW=4;                       // 線の太さ(スライド座標 1600x900 での px)
 let mode='pointer',colorIdx=0,inks={},stroke=null,erasing=false,toolT=null;
-const pal=()=>PAL[theme==='board'?'board':'white'];
+const pal=()=>PAL[theme==='board'||(curDesign()||{}).base==='board'?'board':'white'];
 function inkRect(){const r=sv.querySelector('.slide').getBoundingClientRect();return {r,k:r.width/W||1};}
 function sizeInk(){
   const {k}=inkRect(),d=window.devicePixelRatio||1;
@@ -1626,6 +1629,207 @@ $('btnPrint').onclick=async()=>{
   window.print();
 };
 
+/* ---------- デザインの取り込み:形式の検査 ----------
+   取り込む JSON(形式 simple-slide-design 版 1)を検査し、使う値だけを取り出す。
+   背景・名前・形式・版の誤りは取り込みを止める。base・author・license・色の誤りはその項目だけ無視する。
+   試験(tests/d_validate.py)がこの印の間を取り出して実行するので、ほかの部分に頼らない */
+/*DI-VALIDATE{*/
+const DESIGN_MAX=2*1024*1024;   /* ファイルの大きさの上限(バイト) */
+const DESIGN_COLORS=['background','text','sub','title','titleRule','rule','box','link','code','red','yellow','blue','pageNumber'];
+const DESIGN_KEYS=['format','version','name','base','author','license','cover','slide','colors'];
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+function designSvgOk(svg){
+  /* 画像として描かれる SVG は、壊れていると黙って何も描かれないので、取り込むときに XML として解析して確かめる。
+     解析の誤りの印は、Chrome・Safari は文書の中の parsererror 要素、Firefox は根の parsererror 要素 */
+  let d;
+  try{d=new DOMParser().parseFromString(svg,'image/svg+xml');}catch(e){return 'SVG が壊れています';}
+  const r=d.documentElement;
+  if(!r||d.getElementsByTagName('parsererror').length||r.localName!=='svg') return 'SVG が壊れています';
+  if(r.namespaceURI!=='http://www.w3.org/2000/svg') return 'xmlns がありません';
+  return '';
+}
+/* 背景の文字列を検査する。戻り値は {v:使う文字列} か {err:理由} */
+function designBg(s){
+  if(typeof s!=='string') return {err:'文字列でない'};
+  const t=s.trim();
+  if(/^data:/i.test(t)){
+    const m=/^data:image\/(png|jpeg|webp|svg\+xml);base64,([A-Za-z0-9+/\s]+={0,2})\s*$/.exec(t);
+    if(!m) return {err:'使えない data URI'};
+    const b64=m[2].replace(/\s+/g,'');
+    let bin;
+    try{bin=atob(b64);}catch(e){return {err:'base64 の誤り'};}
+    const ty=m[1];
+    if(ty==='svg+xml'){
+      let txt;
+      try{txt=new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(bin,c=>c.charCodeAt(0)));}catch(e){return {err:'UTF-8 でない'};}
+      const e=designSvgOk(txt);
+      if(e) return {err:e};
+    }else{
+      const ok=ty==='png'?bin.startsWith('\x89PNG\r\n\x1a\n'):ty==='jpeg'?bin.startsWith('\xff\xd8\xff'):(bin.startsWith('RIFF')&&bin.slice(8,12)==='WEBP');
+      if(!ok) return {err:ty.toUpperCase()+' でない'};
+    }
+    return {v:'data:image/'+ty+';base64,'+b64};
+  }
+  if(!/^(?:<\?xml[^>]*\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/.test(t)) return {err:'SVG でも data URI でもない'};
+  const e=designSvgOk(t);
+  return e?{err:e}:{v:t};
+}
+function designColor(v){
+  if(typeof v!=='string') return '';
+  const t=v.trim();
+  if(!t||t.length>100||/[;{}<>\\"']/.test(t)||/\b(?:var|env|attr)\s*\(/i.test(t)||/^(?:inherit|initial|unset|revert|revert-layer)$/i.test(t)) return '';
+  return (window.CSS&&CSS.supports&&CSS.supports('color',t))?t:'';
+}
+/* 解析済みのオブジェクトを検査する。
+   戻り値 {ok:true,design,ignored:[知らないキー],bad:[値が使えず無視した項目]} か {ok:false,error:理由} */
+function checkDesign(o){
+  const fail=error=>({ok:false,error});
+  if(!isObj(o)) return fail('オブジェクトでない');
+  if(o.format!=='simple-slide-design') return fail('format が違う');
+  if(o.version!==1) return fail('version が 1 でない');
+  const name=typeof o.name==='string'?o.name.trim():'';
+  const nlen=[...name].length;
+  if(nlen<1||nlen>40) return fail('name は 1〜40 文字');
+  const ignored=[],bad=[];
+  for(const k of Object.keys(o)) if(!DESIGN_KEYS.includes(k)) ignored.push(k);
+  const d={format:'simple-slide-design',version:1,name,base:'white',cover:{},slide:{},colors:{}};
+  if(o.base!==undefined){if(o.base==='white'||o.base==='board') d.base=o.base; else bad.push('base');}
+  for(const [k,max] of [['author',100],['license',200]]){
+    if(o[k]===undefined) continue;
+    if(typeof o[k]==='string'&&[...o[k]].length<=max) d[k]=o[k]; else bad.push(k);
+  }
+  for(const part of ['cover','slide']){
+    const p=o[part];
+    if(p===undefined) continue;
+    if(!isObj(p)) return fail(part+' の形が違う');
+    for(const k of Object.keys(p)) if(k!=='background') ignored.push(part+'.'+k);
+    if(p.background===undefined) continue;
+    const r=designBg(p.background);
+    if(r.err) return fail(part+'.background:'+r.err);
+    d[part].background=r.v;
+  }
+  if(o.colors!==undefined){
+    if(!isObj(o.colors)) bad.push('colors');
+    else for(const k of Object.keys(o.colors)){
+      if(!DESIGN_COLORS.includes(k)){ignored.push('colors.'+k);continue;}
+      const c=designColor(o.colors[k]);
+      if(c) d.colors[k]=c; else bad.push('colors.'+k);
+    }
+  }
+  return {ok:true,design:d,ignored,bad};
+}
+/* ファイルの中身(文字列)を検査する */
+function validateDesign(text){
+  if(typeof text!=='string') return {ok:false,error:'読めない'};
+  if(new TextEncoder().encode(text).length>DESIGN_MAX) return {ok:false,error:'2 MB 超'};
+  let o;
+  try{o=JSON.parse(text.replace(/^﻿/,''));}catch(e){return {ok:false,error:'JSON の誤り'};}
+  return checkDesign(o);
+}
+/*}DI-VALIDATE*/
+
+/* ---------- デザインの取り込み:保存と描画 ----------
+   取り込んだデザインはブラウザ(KEY_DESIGNS)にだけ置く。選択中の配色は KEY_THEME に「custom:<id>」で置く。
+   文字の配置は白(黒板)の CSS をそのまま使い、ここでは背景と色だけを足す */
+const KEY_DESIGNS='slide.html:designs';
+let DESIGNS=[];
+function loadDesigns(){
+  let a;
+  try{a=JSON.parse(lsGet(KEY_DESIGNS)||'[]');}catch(e){a=[];}
+  DESIGNS=[];
+  if(!Array.isArray(a)) return;
+  for(const x of a){
+    /* 保存した値も、使う前にもう一度検査する(壊れたものは使わない) */
+    if(!isObj(x)||typeof x.id!=='string'||!/^[A-Za-z0-9_-]{1,40}$/.test(x.id)||DESIGNS.some(d=>d.id===x.id)) continue;
+    const o=Object.assign({},x);delete o.id;
+    const r=checkDesign(o);
+    if(r.ok) DESIGNS.push(Object.assign({id:x.id},r.design));
+  }
+}
+function curDesign(){return theme.startsWith('custom:')?DESIGNS.find(d=>'custom:'+d.id===theme)||null:null;}
+const designStyle=document.createElement('style');
+document.head.appendChild(designStyle);
+function designUrl(s){return 'url("'+(s.startsWith('data:')?s:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s))+'")';}
+/* 選択中のデザインの CSS を、検査済みの値だけから組み立てる(SVG は DOM に入れず、背景画像として描く) */
+function applyDesignCss(){
+  const d=curDesign();
+  if(!d){designStyle.textContent='';return;}
+  const c=d.colors,vars=[];
+  const V={background:'--bg',text:'--fg',sub:'--sub',rule:'--rule',box:'--box',link:'--link',code:'--codebg',red:'--c-red',yellow:'--c-yellow',blue:'--c-blue'};
+  for(const k in V) if(c[k]) vars.push(V[k]+':'+c[k]);
+  let css='.slide.custom{'+vars.join(';')+'}\n';
+  if(d.slide.background) css+='.slide.custom:not(.cover){background:var(--bg) '+designUrl(d.slide.background)+' 0 0/100% 100% no-repeat}\n';
+  if(d.cover.background) css+='.slide.custom.cover{background:var(--bg) '+designUrl(d.cover.background)+' 0 0/100% 100% no-repeat}\n';
+  if(c.title) css+='.slide.custom .head,.slide.custom .content h1{color:'+c.title+'}\n';
+  if(c.titleRule) css+='.slide.custom .head{border-bottom-color:'+c.titleRule+'}\n';
+  if(c.pageNumber) css+='.slide.custom .pageno{color:'+c.pageNumber+'}\n';
+  designStyle.textContent=css;
+}
+/* 配色の選択欄:既存の 5 配色の後ろに、取り込んだデザイン(optgroup)、「デザインを読み込む…」、選択中なら「このデザインを削除…」 */
+const OPT_LOAD='__load',OPT_DEL='__delete';
+function buildThemeSelect(){
+  const s=$('theme');
+  s.querySelectorAll('optgroup,option[value^="__"]').forEach(e=>e.remove());
+  const opt=(v,t)=>{const o=document.createElement('option');o.value=v;o.textContent=t;return o;};
+  if(DESIGNS.length){
+    const g=document.createElement('optgroup');g.label='取り込んだデザイン';
+    for(const d of DESIGNS) g.appendChild(opt('custom:'+d.id,d.name));
+    s.appendChild(g);
+  }
+  s.appendChild(opt(OPT_LOAD,'デザインを読み込む…'));
+  if(curDesign()) s.appendChild(opt(OPT_DEL,'このデザインを削除…'));
+  s.value=theme;
+}
+function setTheme(t){theme=t;lsSet(KEY_THEME,t);applyDesignCss();buildThemeSelect();drawPreview();}
+/* 容量超過を見分けるため、lsSet を使わずに直接書く。失敗したときは保存済みの内容が残る */
+function saveDesigns(){
+  try{
+    if(DESIGNS.length) localStorage.setItem(KEY_DESIGNS,JSON.stringify(DESIGNS)); else localStorage.removeItem(KEY_DESIGNS);
+    return true;
+  }catch(e){return false;}
+}
+function newDesignId(){
+  let id;
+  do{id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}while(DESIGNS.some(d=>d.id===id));
+  return id;
+}
+function designFail(msg){setWarn('design','取り込めません:'+msg);}
+function importDesign(text){
+  const r=validateDesign(text);
+  if(!r.ok){designFail(r.error);return;}
+  const d=r.design,old=DESIGNS.find(x=>x.name===d.name);
+  if(old&&!confirm('同じ名前があります。上書きしますか?')) return;
+  const nd=Object.assign({id:old?old.id:newDesignId()},d);
+  if(old) DESIGNS[DESIGNS.indexOf(old)]=nd; else DESIGNS.push(nd);
+  const saved=saveDesigns();
+  const notes=[];
+  if(r.ignored.length||r.bad.length) notes.push('無視:'+r.ignored.concat(r.bad).join('、'));
+  if(!saved) notes.push('容量不足(このタブだけで使えます)');
+  setTheme('custom:'+nd.id);
+  setWarn('design',notes.join(' / '));
+  setStat('取り込みました');
+}
+function deleteDesign(){
+  const d=curDesign();
+  if(!d||!confirm('このデザインを削除しますか?')) return;
+  DESIGNS=DESIGNS.filter(x=>x!==d);
+  const saved=saveDesigns();
+  setTheme('white');
+  setWarn('design',saved?'':'削除を保存できません');
+  setStat('削除しました');
+}
+$('designFile').onchange=e=>{
+  const f=e.target.files[0];
+  e.target.value='';
+  if(!f) return;
+  setWarn('design','');
+  if(f.size>DESIGN_MAX){designFail('2 MB 超');return;}
+  const r=new FileReader();
+  r.onload=()=>importDesign(String(r.result));
+  r.onerror=()=>designFail('読めない');
+  r.readAsText(f,'utf-8');
+};
+
 /* ---------- ファイル・設定 ---------- */
 let fileName=lsGet(KEY_NAME)||'';
 function setName(n){fileName=n;lsSet(KEY_NAME,n);showName();}
@@ -1757,7 +1961,25 @@ $('btnSave').onclick=async()=>{
   download(fileText(),fileName);
   setDirty(false);
 };
-$('theme').onchange=e=>{theme=e.target.value;lsSet(KEY_THEME,theme);drawPreview();};
+/* 「読み込む…」「削除…」は配色ではないので、選択欄はいったん今の配色に戻す(ファイル選択をキャンセルしてもそのまま) */
+function themeAction(v){
+  $('theme').value=theme;
+  if(v===OPT_LOAD) $('designFile').click(); else deleteDesign();
+}
+/* 閉じた選択欄を矢印キーなどで動かしたときも change が起きる。そのときは「読み込む…」「削除…」を表示するだけにし、Enter で実行する */
+let themeKeyNav=false;
+$('theme').addEventListener('keydown',e=>{
+  const v=e.target.value;
+  if(e.key==='Enter'){if(v===OPT_LOAD||v===OPT_DEL){e.preventDefault();themeAction(v);}return;}
+  if(/^(Arrow|Page)/.test(e.key)||e.key==='Home'||e.key==='End'||e.key.length===1){themeKeyNav=true;setTimeout(()=>{themeKeyNav=false;},0);}
+});
+$('theme').addEventListener('blur',e=>{if(e.target.value===OPT_LOAD||e.target.value===OPT_DEL) e.target.value=theme;});
+$('theme').onchange=e=>{
+  const v=e.target.value;
+  if(v===OPT_LOAD||v===OPT_DEL){if(!themeKeyNav) themeAction(v);return;}
+  setWarn('design','');
+  setTheme(v);
+};
 $('btnHelp').onclick=()=>$('help').showModal();
 $('helpClose').onclick=()=>$('help').close();
 /* 書き方の一覧の外側(暗くなった部分)をクリックしても閉じる */
@@ -1770,8 +1992,13 @@ new ResizeObserver(()=>place(pv)).observe(pv);
 new ResizeObserver(()=>{if(!show.hidden){place(sv);sizeInk();}}).observe(sv);
 
 /* ---------- 起動 ---------- */
-theme=['board','enji','shikon','pale'].includes(lsGet(KEY_THEME))?lsGet(KEY_THEME):'white';
-$('theme').value=theme;
+loadDesigns();
+{
+  const t0=lsGet(KEY_THEME)||'';
+  theme=['board','enji','shikon','pale'].includes(t0)||(t0.startsWith('custom:')&&DESIGNS.some(d=>'custom:'+d.id===t0))?t0:'white';
+}
+applyDesignCss();
+buildThemeSelect();
 {
   let doc=null;
   try{doc=JSON.parse(lsGet(KEY_DOC)||'null');}catch(e){doc=null;}
