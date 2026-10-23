@@ -127,6 +127,18 @@ header .stat{font-size:13px;color:#2a7a3a}
 .content h4,.content h5,.content h6{font-size:1em;margin:.5em 0 .3em}
 .content p{margin:.35em 0}
 .content.title p{color:var(--sub);font-size:.85em}
+/* 表紙の所属と名前(外側の「- 」が所属、字下げした「- 」が名前) */
+.content.title .authors{margin:.5em 0 .35em}
+.content.title .au-names{font-size:.9em;line-height:1.45;color:var(--fg)}
+.content.title .au-affs{font-size:.72em;line-height:1.5;color:var(--sub);margin-top:.15em}
+.content.title .au-aff{display:inline-block;margin:0 .45em}
+.content.title .authors sup{font-size:.62em;line-height:0}
+/* えんじ系の表紙:所属・名前とその後ろの行(日付など)を小さくし、帯の上に寄せる。題名は残りの空きの中ほどに置く */
+.slide.enji.cover .content.title:has(>.authors)>h1:first-child{margin-top:auto}
+.slide.enji.cover .content.title>.authors{margin-top:auto;margin-bottom:.1em}
+.slide.enji.cover .content.title .au-names{font-size:.72em}
+.slide.enji.cover .content.title .au-affs{font-size:.56em}
+.slide.enji.cover .content.title>.authors~p{font-size:.62em;margin:.15em 0 0}
 .content ul,.content ol{margin:.25em 0;padding-left:1.4em}
 .content li{margin:.12em 0}
 .content li>ul,.content li>ol{margin:.05em 0;font-size:.9em}
@@ -332,6 +344,8 @@ footer a{color:#777}
   <table>
     <tr><td>---</td><td>この行だけで次のスライドへ区切る(コードブロックと $$ の中は区切らない)</td></tr>
     <tr><td># 見出し</td><td>スライドの先頭に置くと表紙(中央寄せ)になる</td></tr>
+    <tr><td>- 所属
+  - 名前</td><td>表紙で所属と名前を書く(外側が所属、字下げしたものがその所属の人)。番号は自動で付く。日付などは - を付けない行で書く</td></tr>
     <tr><td>## 見出し</td><td>通常スライドの題名</td></tr>
     <tr><td>- 項目
   - 入れ子</td><td>箇条書き(番号付きは 1. )。2 字下げで入れ子</td></tr>
@@ -384,6 +398,7 @@ Markdown を --- で区切るとスライドになります
 |---|---|
 | `---`(この行だけ) | 次のスライドへ区切る |
 | `# 題名` | 表紙(中央寄せ) |
+| `- 所属` と、その下に字下げした `- 名前`(表紙で) | 所属と名前(番号は自動) |
 | `## 題名` | スライドの題名 |
 | `- 項目` / `1. 項目` | 箇条書き / 番号付き(2 字下げで入れ子) |
 | `**太字**` `*斜体*` | **太字** *斜体* |
@@ -677,9 +692,15 @@ function stepBlocks(L){
   SEGSTEP=outer;
   return h;
 }
+/* COVER:描いているスライドが表紙(最初の行が「# 」)か。NEST:段組・囲み枠・引用・箇条書きの中を描いている深さ。
+   表紙の一番外側(NEST が 0)の「- 」の箇条書きだけを、所属と名前の欄(authors)として描く */
+let COVER=false,NEST=0;
 function renderSlide(src){
-  STEPN=0;SEGSTEP=0;
-  const h=stepBlocks(src.split('\n'));
+  STEPN=0;SEGSTEP=0;NEST=0;
+  const L=src.split('\n'),first=L.find(l=>!isBlank(l));
+  COVER=!!first&&/^#\s/.test(first);
+  const h=stepBlocks(L);
+  COVER=false;
   return {html:h,maxStep:STEPN};
 }
 function applyStep(el,step){
@@ -811,7 +832,42 @@ function list(L){
   }
   const tag=ordered?'ol':'ul';
   const start=ordered&&parseInt(m0[2],10)!==1?' start="'+parseInt(m0[2],10)+'"':'';
-  return '<'+tag+start+'>'+items.map(it=>'<li>'+blocks(it.lines,!it.loose)+'</li>').join('')+'</'+tag+'>';
+  return '<'+tag+start+'>'+nested(()=>items.map(it=>'<li>'+blocks(it.lines,!it.loose)+'</li>').join(''))+'</'+tag+'>';
+}
+function nested(f){NEST++;try{return f();}finally{NEST--;}}
+/* 表紙の所属と名前:外側の「- 」が所属、字下げした「- 」がその所属の人の名前。
+   名前は初めて出た順に並べ、同じ文字列の名前は 1 人にまとめる。所属の番号も初めて出た順に振り、所属が 1 つなら番号を付けない。
+   名前のない所属だけのときは、所属を 1 行ずつ出す */
+function authors(L){
+  const groups=[];let g=null,last=null;
+  for(const l of L){
+    if(isBlank(l)) continue;
+    const m=l.match(reList);
+    if(m&&m[1].length<=1){g={aff:(m[3]||'').trim(),names:[]};groups.push(g);last=g;continue;}
+    if(m&&g){g.names.push((m[3]||'').trim());last=null;continue;}
+    /* 箇条書きの続きの行:直前の所属または名前につなげる */
+    const t=l.trim();
+    if(last) last.aff+=' '+t; else if(g&&g.names.length) g.names[g.names.length-1]+=' '+t;
+  }
+  const withNames=groups.filter(x=>x.names.length&&x.aff);
+  if(!withNames.length) return '<div class="authors">'+groups.filter(x=>x.aff).map(x=>'<div class="au-affs">'+inline(x.aff)+'</div>').join('')+'</div>';
+  const affs=[],people=[],of=Object.create(null);
+  for(const x of groups){
+    if(!x.aff) continue;
+    let k=affs.indexOf(x.aff);
+    if(k<0&&x.names.length){affs.push(x.aff);k=affs.length-1;}
+    for(const n of x.names){
+      if(!n) continue;
+      if(!(n in of)){of[n]=[];people.push(n);}
+      if(!of[n].includes(k+1)) of[n].push(k+1);
+    }
+  }
+  const one=affs.length===1;
+  const extra=groups.filter(x=>x.aff&&!x.names.length&&!affs.includes(x.aff)).map(x=>x.aff);
+  const names=people.map(n=>'<span class="au-name">'+inline(n)+(one?'':'<sup>'+of[n].join(',')+'</sup>')+'</span>').join(', ');
+  const affLine=affs.map((a,k)=>'<span class="au-aff">'+(one?'':'<sup>'+(k+1)+'</sup>')+inline(a)+'</span>')
+    .concat(extra.map(a=>'<span class="au-aff">'+inline(a)+'</span>')).join(' ');
+  return '<div class="authors"><div class="au-names">'+names+'</div><div class="au-affs">'+affLine+'</div></div>';
 }
 const LANG_ALIAS={'c++':'cpp',cc:'cpp',cxx:'cpp',hpp:'cpp',h:'c',ino:'arduino',py:'python',python3:'python',
   m:'matlab',octave:'matlab',jl:'julia',f:'fortran',f90:'fortran',f95:'fortran',sh:'bash',shell:'bash',zsh:'bash',tex:'latex'};
@@ -888,12 +944,12 @@ function blocks(L,tight){
         if(depth===0&&/^\s*\|\|\|\s*$/.test(u)){parts.push([]);continue;}
         parts[parts.length-1].push(u);
       }
-      out.push('<div class="cols">'+parts.map((q,k)=>'<div class="col" style="flex:'+(ratio[k]||1)+' 1 0">'+stepBlocks(q)+'</div>').join('')+'</div>');
+      out.push('<div class="cols">'+parts.map((q,k)=>'<div class="col" style="flex:'+(ratio[k]||1)+' 1 0">'+nested(()=>stepBlocks(q))+'</div>').join('')+'</div>');
       i=end+1;continue;
     }
     if(m=l.match(/^\s*:::\s*box\b\s*(.*)$/)){
       const title=m[1].trim(),{body,end}=collectFenced(L,i+1);
-      out.push('<div class="box">'+(title?'<div class="box-t">'+inline(title)+'</div>':'')+'<div class="box-b">'+stepBlocks(body)+'</div></div>');
+      out.push('<div class="box">'+(title?'<div class="box-t">'+inline(title)+'</div>':'')+'<div class="box-b">'+nested(()=>stepBlocks(body))+'</div></div>');
       i=end+1;continue;
     }
     if(m=l.match(reHead)){
@@ -904,7 +960,7 @@ function blocks(L,tight){
     if(/^\s*>/.test(l)){
       const buf=[];
       while(i<L.length&&/^\s*>/.test(L[i])) buf.push(L[i++].replace(/^\s*> ?/,''));
-      out.push('<blockquote>'+blocks(buf,false)+'</blockquote>');
+      out.push('<blockquote>'+nested(()=>blocks(buf,false))+'</blockquote>');
       continue;
     }
     if(isTableStart(L,i)){
@@ -929,7 +985,7 @@ function blocks(L,tight){
         if(ind<=base+1&&reList.test(u)&&!sameList(u)) break;
         buf.push(u);i++;
       }
-      out.push(list(buf));
+      out.push(COVER&&NEST===0&&!ord?authors(buf):list(buf));
       continue;
     }
     const buf=[l.replace(/\s+$/,'')];i++;
