@@ -295,7 +295,7 @@ footer a{color:#777}
   <span class="name">スライド</span>
   <button id="btnNew" title="空のスライドで新しく始める">新規</button>
   <button id="btnOpen" title="Markdown ファイルを開く">開く</button>
-  <button id="btnSave" title="開いているファイルに上書き保存(まだファイルがないときは保存先を選ぶ)">上書き保存</button>
+  <button id="btnSave" title="開いているファイルに上書き保存(Ctrl+S。まだファイルがないときは保存先を選ぶ)">上書き保存</button>
   <button id="btnSaveAs" title="保存先とファイル名を選んで保存">別名で保存</button>
   <span class="file" id="fileName"></span>
   <span class="warn" id="warn"></span>
@@ -381,7 +381,7 @@ code
   <p>段落内の改行はそのまま改行になります。内容がはみ出すスライドは文字を自動で縮小します。</p>
   <p>発表中:次へ = クリック・→・↓・Space・Enter・PageDown/前へ = ←・↑・PageUp・Backspace/先頭・末尾 = Home・End/終了 = Esc。最後のスライドの次は終了画面になり、もう一度進めると発表を終えます。B で画面を黒く(もう一度 B、ほかのキー、クリックで戻る)。I でスライドの一覧(クリックでそのスライドへ、I か Esc で閉じる)<br>
   マウスやペンを動かすと左下に道具が出ます。ペンで書けます(ペンの側面ボタンを押しながら書くと消しゴム)。ペン・消しゴムのときはクリックで次へ進まないので、キーで進めてください。書き込みはスライドごとに残り、発表を終えると消えます。<br>
-  編集中の内容はこのブラウザに自動で保持されます。ファイルに残すときは「上書き保存」か「別名で保存」を使ってください(Chrome・Edge では開いたファイルに上書き。ほかのブラウザではダウンロード)。ファイル名の後ろの * は保存していない変更があることを示します。貼った画像は保存した .md の末尾にまとめて埋め込まれ、「開く」で読み込むと元に戻ります。</p>
+  編集中の内容はこのブラウザに自動で保持されます。ファイルに残すときは「上書き保存」(Ctrl+S)か「別名で保存」を使ってください(Chrome・Edge では開いたファイルに上書き。ほかのブラウザではダウンロード)。ファイル名の後ろの * は保存していない変更があることを示します。貼った画像は保存した .md の末尾にまとめて埋め込まれ、「開く」で読み込むと元に戻ります。</p>
   <div class="close"><button id="helpClose">閉じる</button></div>
 </dialog>
 
@@ -2003,6 +2003,13 @@ async function saveAs(){
   setName(name);setDirty(false);
 }
 $('btnSaveAs').onclick=saveAs;
+/* Ctrl+S(Mac では ⌘S)で上書き保存。ブラウザの「ページを保存」は出さない。発表中は保存しない */
+window.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&e.key.toLowerCase()==='s'){
+    e.preventDefault();
+    if(show.hidden) $('btnSave').click();
+  }
+});
 $('btnSave').onclick=async()=>{
   if(saving) return;
   if(FS_OK&&fileHandle){
