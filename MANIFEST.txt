@@ -1,11 +1,11 @@
 # シンプルスライドのリポジトリ全体(~/projects/slide で展開する)。すべて投入可
-# 変更したもの: index.html(原稿の埋め込み)、README.md(「原稿を埋め込んだ HTML」の節、保持先の説明、生成 AI の手順)、prompt_for_ai.md(埋め込み HTML の作り方)。ほかは GitHub の main と同じ
+# GitHub の main からの変更: index.html(原稿の埋め込み、Go・C#・Rust・JavaScript の色付け)、README.md、prompt_for_ai.md、demo_slides.md(使える言語の一覧)。ほかは main と同じ
 1c9544bd1252ba453bf3f21e1d395afb  CNAME
 7e0b21c9f084ec53eca3d0ebb7da61e0  LICENSE
-33404cfe7de8f2fadca54772b102a82c  README.md
-df5c9031896b2353d6f3396d37d89d54  demo_slides.md
+17a7421dd64ada0fa8b946ea93c6ccba  README.md
+d57381165e344c06a661297a6bf1539d  demo_slides.md
 21d0ece6f98ab3e3621326d7ea312e56  designs/sample_dark.json
 5ed376ae31de751b11142806c8504510  designs/sample_light.json
-0e55276fcd571e512898156aae1deea0  index.html
-f078de30e88587513ecb547c3d054869  prompt_for_ai.md
+24602e0170f3a748903adbefc459633d  index.html
+b85f092326c3a01bfc794a44b50d9078  prompt_for_ai.md
 9d2cdf1d77401f9820675d69308b7bb4  prompt_for_ai_design.md

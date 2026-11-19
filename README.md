@@ -132,7 +132,7 @@ print("hello")
 ```
 ````
 
-言語名を書くと色が付きます。使える言語は c, cpp, arduino, java, python, matlab, julia, fortran, bash, latex です。
+言語名を書くと色が付きます。使える言語は c, cpp, csharp, arduino, java, javascript, go, rust, python, matlab, julia, fortran, bash, latex です。
 
 ### 段階表示
 

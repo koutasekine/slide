@@ -33,7 +33,7 @@ Markdown を --- で区切るとスライドになります
 | `$x^2 + y^2$` | 行内数式 $x^2 + y^2$ |
 | `$$`(改行)式(改行)`$$` | 別行立ての数式 |
 | `$\newcommand{\norm}[1]{\lVert #1\rVert}$` | マクロ定義(以降のスライドで有効) |
-| ` ```cpp `(改行)コード(改行)` ``` ` | 色付きのコード(c, cpp, arduino, java, python, matlab, julia, fortran, bash, latex) |
+| ` ```cpp `(改行)コード(改行)` ``` ` | 色付きのコード(c, cpp, csharp, arduino, java, javascript, go, rust, python, matlab, julia, fortran, bash, latex) |
 | `| a | b |`(2 行目 `|---|--:|`) | 表 |
 | 画像をドロップ / Ctrl+V | 画像を貼る(右のスライドでドラッグして移動、四隅で拡大縮小) |
 | `![説明](a.png)` | ファイルや URL の画像 |
