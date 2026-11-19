@@ -1,6 +1,6 @@
-このリポジトリには、ライセンスの異なる 4 つの部分があります。
+このリポジトリには、ライセンスの異なる 5 つの部分があります。
 
-1. プログラム(index.html の HTML・CSS・JavaScript。下記 2〜4 を除く)
+1. プログラム(index.html の HTML・CSS・JavaScript。下記 2〜5 を除く)
    MIT License(本文は下記)
    Copyright (c) 2026 Kouta Sekine
 
@@ -20,6 +20,14 @@
    MIT License
    Copyright (c) 2012 Lea Verou
    Prism のライセンス本文は index.html 冒頭のコメントにあります。
+
+5. 同梱の Mermaid(index.html に埋め込まれた Mermaid 12.3.0 の tiny 版 mermaid.tiny.js)
+   MIT License
+   Copyright (c) 2014 - 2022 Knut Sveidqvist
+   Mermaid のライセンス本文は index.html 冒頭のコメントにあります。
+   mermaid.tiny.js は、Mermaid が使うライブラリ(D3 の部品、dagre-d3-es、DOMPurify、langium、chevrotain など 58 個)を中に含みます。
+   それらのライセンスは MIT・ISC・BSD-3-Clause・Apache-2.0 で、DOMPurify は MPL-2.0 と Apache-2.0 の二重ライセンスのうち Apache-2.0 を選びます。
+   各ライブラリの著作権表示とライセンス本文は、index.html 冒頭のコメントにあります。
 
 --------------------------------------------------------------------------
 

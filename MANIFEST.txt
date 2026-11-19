@@ -1,11 +1,11 @@
 # シンプルスライドのリポジトリ全体(~/projects/slide で展開する)。すべて投入可
-# GitHub の main からの変更: index.html(原稿の埋め込み、Go・C#・Rust・JavaScript の色付け)、README.md、prompt_for_ai.md、demo_slides.md(使える言語の一覧)。ほかは main と同じ
+# GitHub の main からの変更: index.html(原稿の埋め込み、Go・C#・Rust・JavaScript の色付け、Mermaid 12.3.0 tiny 版の図と黒板の配色、同梱ライブラリの著作権表示)、README.md、prompt_for_ai.md、demo_slides.md、LICENSE。ほかは main と同じ
 1c9544bd1252ba453bf3f21e1d395afb  CNAME
-7e0b21c9f084ec53eca3d0ebb7da61e0  LICENSE
-17a7421dd64ada0fa8b946ea93c6ccba  README.md
+3260c81038e580f94cbdd209226178ec  LICENSE
+430d903cf66f2680ac9fdc6eaa0cfd28  README.md
 d57381165e344c06a661297a6bf1539d  demo_slides.md
 21d0ece6f98ab3e3621326d7ea312e56  designs/sample_dark.json
 5ed376ae31de751b11142806c8504510  designs/sample_light.json
-24602e0170f3a748903adbefc459633d  index.html
-b85f092326c3a01bfc794a44b50d9078  prompt_for_ai.md
+9f9697dcd43772a7cfb4fe31b8b2e4ab  index.html
+69d117acda94ed15522d67a5be9bb001  prompt_for_ai.md
 9d2cdf1d77401f9820675d69308b7bb4  prompt_for_ai_design.md
