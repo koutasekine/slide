@@ -1,11 +1,11 @@
 # シンプルスライド リポジトリ一式(リポジトリのルートに展開する)。すべて投入可。
-# 今回の変更: index.html(Markdown を CommonMark/GFM に合わせた変更、レビューと確認の指摘の修正。行の種類の判定を 1 か所にまとめた。書き方の画面も更新)、README.md、prompt_for_ai.md
+# 今回の変更: index.html(Markdown を CommonMark/GFM に合わせた変更、レビューと確認の指摘の修正、URL の直前の文字の扱いを markdown-it に合わせた、脚注の 2 行目以降の頭をそろえた。書き方の画面も更新)、README.md、prompt_for_ai.md
 1c9544bd1252ba453bf3f21e1d395afb  CNAME
 3260c81038e580f94cbdd209226178ec  LICENSE
 dbd1348abdfff4d181f671925d5e3a29  README.md
 d57381165e344c06a661297a6bf1539d  demo_slides.md
 21d0ece6f98ab3e3621326d7ea312e56  designs/sample_dark.json
 5ed376ae31de751b11142806c8504510  designs/sample_light.json
-e22e26fd796567aa23d71dbf16689c65  index.html
+d7b0b5b65fc3ce6858144bbc4866a04b  index.html
 7a0b075d1569e0d99a7e7b84bef65ea8  prompt_for_ai.md
 9d2cdf1d77401f9820675d69308b7bb4  prompt_for_ai_design.md

@@ -1445,6 +1445,9 @@ header .stat{font-size:13px;color:#2a7a3a}
 .content .fnref{font-size:.6em;line-height:0}
 .content .fns{margin-top:auto;padding-top:.6em;font-size:.6em;line-height:1.4}
 .content .fns sup{font-size:.7em;line-height:0}
+/* 注の番号の幅をそろえ、注の本文の 2 行目以降を本文の頭にそろえる */
+.content .fns .fn{display:flex}
+.content .fns .fnn{flex:0 0 auto;min-width:1.1em}
 .content blockquote{margin:.4em 0;padding:.1em 0 .1em .8em;border-left:.18em solid var(--rule);color:var(--sub)}
 .content pre{margin:.4em 0;padding:.5em .7em;background:var(--codebg);border-radius:8px;font:.62em/1.45 var(--mono);overflow:hidden;white-space:pre}
 .content code{font-family:var(--mono);font-size:.85em;background:var(--codebg);padding:.05em .25em;border-radius:4px}
@@ -5757,7 +5760,7 @@ function footnotes(){
     for(let k=0;k<FN.order.length;k++){
       const f=FN.order[k];SEGSTEP=f.s;
       const body=FN.defs.get(f.k).trim().split(/\n[ \t]*\n\s*/).map(q=>inline(q.trim())).join('<br>');
-      h+='<div class="fn'+(f.s?' step" data-s="'+f.s+'"':'"')+'><sup>'+f.n+'</sup> '+body+'</div>';
+      h+='<div class="fn'+(f.s?' step" data-s="'+f.s+'"':'"')+'><span class="fnn"><sup>'+f.n+'</sup></span><span>'+body+'</span></div>';
     }
   }finally{SEGSTEP=keep;NOPOS=false;}
   return '<div class="fns">'+h+'</div>';
@@ -5834,10 +5837,10 @@ function trimUrl(u){
   if(/^(?:https?:\/\/|www\.)$/i.test(u)) return ['',''];
   return [u,rest];
 }
-/* 文字列の中の、URL だけを書いたもの(https://…・www.…)をリンクにする。
+/* 文字列の中の、URL だけを書いたもの(https://…・www.…)をリンクにする。https:// の直前が英数字なら、リンクにしない(markdown-it と同じ)。
    ドメイン名は英数字と _ . - だけとし、続く / ? # からの部分は、日本語の文に続けて書けるよう全角の記号(、。「」()など)の前で終える */
 function linkBare(t,put){
-  return t.replace(/(?<![\w\/.:@&-])((?:https?:\/\/|www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,u=>{
+  return t.replace(/((?:(?<![A-Za-z0-9])https?:\/\/|(?<![\w\/.:@&-])www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,u=>{
     const [v,rest]=trimUrl(u);
     if(!v) return u;
     return put(aOpen(/^www\./i.test(v)?'http://'+v:v,'')+esc(decEnts(v))+'</a>',v)+rest;
@@ -5896,7 +5899,7 @@ function inline(s){
     return put('<sup class="fnref">'+u.n+'</sup>',a);
   });
   /* URL だけを書いたもの(https://…・www.…)。リンクの書き方の [..](..)・[..][..] と、定義のある [名前] の中は除く */
-  s=s.replace(/(!?\[([^\]\n]*)\](\([^)\n]*\)|\[[^\]\n]*\])?)|(?<![\w\/.:@&-])((?:https?:\/\/|www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,(a,lk,inner,tail,u)=>{
+  s=s.replace(/(!?\[([^\]\n]*)\](\([^)\n]*\)|\[[^\]\n]*\])?)|((?:(?<![A-Za-z0-9])https?:\/\/|(?<![\w\/.:@&-])www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,(a,lk,inner,tail,u)=>{
     if(lk!==undefined) return tail!==undefined||REFS[refKey(unphO(inner))]?a:a[0]==='!'?'!['+linkBare(inner,put)+']':'['+linkBare(inner,put)+']';
     return linkBare(u,put);
   });
