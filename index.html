@@ -1436,6 +1436,15 @@ header .stat{font-size:13px;color:#2a7a3a}
 .content li{margin:.12em 0}
 .content li>ul,.content li>ol{margin:.05em 0;font-size:.9em}
 .content ul ul{list-style:circle}
+.content hr{align-self:stretch;margin:.45em 0;border:0;border-top:3px solid var(--rule)}
+.content li.task{list-style:none}
+/* チェックボックスは配色の文字色で描く(枠と、済みの印) */
+.content li.task input{-webkit-appearance:none;appearance:none;font-size:inherit;color:inherit;opacity:1;width:.72em;height:.72em;margin:0 .32em 0 -1.04em;vertical-align:-.04em;
+  background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='1' width='14' height='14' rx='2' fill='none' stroke='black' stroke-width='1.6'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='1' width='14' height='14' rx='2' fill='none' stroke='black' stroke-width='1.6'/></svg>") center/contain no-repeat}
+.content li.task input:checked{-webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='1' width='14' height='14' rx='2' fill='none' stroke='black' stroke-width='1.6'/><path d='M4 8.3l2.8 2.9L12.2 4.6' fill='none' stroke='black' stroke-width='2'/></svg>");mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='1' width='14' height='14' rx='2' fill='none' stroke='black' stroke-width='1.6'/><path d='M4 8.3l2.8 2.9L12.2 4.6' fill='none' stroke='black' stroke-width='2'/></svg>")}
+.content .fnref{font-size:.6em;line-height:0}
+.content .fns{margin-top:auto;padding-top:.6em;font-size:.6em;line-height:1.4}
+.content .fns sup{font-size:.7em;line-height:0}
 .content blockquote{margin:.4em 0;padding:.1em 0 .1em .8em;border-left:.18em solid var(--rule);color:var(--sub)}
 .content pre{margin:.4em 0;padding:.5em .7em;background:var(--codebg);border-radius:8px;font:.62em/1.45 var(--mono);overflow:hidden;white-space:pre}
 .content code{font-family:var(--mono);font-size:.85em;background:var(--codebg);padding:.05em .25em;border-radius:4px}
@@ -1652,12 +1661,25 @@ footer a{color:#777}
 $$</td><td>別行立て数式(\[ … \] も可)。\begin{aligned} なども使える</td></tr>
     <tr><td>$\newcommand{\norm}[1]{\lVert #1\rVert}$</td><td>マクロ定義。以降のスライドすべてで有効(KaTeX に既にある \R などは \renewcommand で上書き)</td></tr>
     <tr><td>\$</td><td>ドル記号そのもの</td></tr>
-    <tr><td>**強調** *斜体* `code`</td><td>強調・斜体・等幅</td></tr>
+    <tr><td>**強調** *斜体* `code`</td><td>強調・斜体・等幅(__強調__ _斜体_ も可。単語の途中の _ はそのまま)</td></tr>
+    <tr><td>[文字](https://… "題")</td><td>リンク(題は省略可)。&lt;https://…&gt; や、URL をそのまま書いてもリンクになる</td></tr>
+    <tr><td>[文字][名前]
+[名前]: https://…</td><td>参照リンク。定義の行は表示されない。定義は原稿のどのスライドに書いてもよい(段落のすぐ次の行には書けないので、前に空行を入れる)</td></tr>
+    <tr><td>本文[^1]
+[^1]: 注の本文</td><td>脚注。番号はスライドごとに 1 から付き、注はそのスライドの下に出る(定義は同じスライドに書く)</td></tr>
+    <tr><td>&lt;!-- メモ --&gt;</td><td>コメント(表示しない。複数行も可。中の --- や +-+-+- では区切らない)。コードと別行立て数式の中では文字のまま(数式のコメントは TeX の %)</td></tr>
+    <tr><td>***</td><td>区切り線(___ や * * * も可。--- はスライドの区切り)</td></tr>
+    <tr><td>- [ ] 項目
+- [x] 項目</td><td>チェックボックス付きの箇条書き</td></tr>
+    <tr><td>題名
+===</td><td>見出し(# 題名 と同じ大きさ。表紙にはならない)</td></tr>
+    <tr><td>行末の \
+&amp;copy; &amp;#x41;</td><td>行末の \ は改行(\ は出ない)。&amp;名前; などの文字参照は、その文字になる</td></tr>
     <tr><td>++下線++</td><td>下線</td></tr>
     <tr><td>[文字]{.red}</td><td>文字の色。.red・.yellow・.blue の 3 色(配色に合わせて自動で見やすい色になる)</td></tr>
     <tr><td>```cpp
 code
-```</td><td>コードブロック。言語名を書くと色が付く:c, cpp, csharp, arduino, java, javascript, go, rust, python, matlab, julia, fortran, bash, latex</td></tr>
+```</td><td>コードブロック(4 字下げした行もコードブロック)。言語名を書くと色が付く:c, cpp, csharp, arduino, java, javascript, go, rust, python, matlab, julia, fortran, bash, latex</td></tr>
     <tr><td>```mermaid
 flowchart TD
   A --> B
@@ -5534,40 +5556,132 @@ function mathOpenAt(l){
   return null;
 }
 function mathClosesAt(l,tok){return tok==='$$'?l.replace(/\\\$/g,'').includes('$$'):l.includes('\\]');}
-/* 区切りの行(sep)で分ける。コードブロックと別行立て数式(と cols が真なら ::: の中)は区切らない。
-   閉じていない数式の始まりは数式として扱わず(以降が 1 つにまとまらないように)、その行番号を unclosed に入れる */
-function splitOutside(L,sep,useCols){
-  const ignore=new Set();
-  const looksOutside=l=>/^#{1,6}\s/.test(l);   /* 数式の中には現れない行(見出し)。--- は数式の中でも許すので使わない */
+/* 閉じていない <!-- の見分け:コメントの中ではコードも数式も働かないので、<!-- の後ろのどこかに --> があれば閉じている。
+   原稿の最後の --> より後ろの <!-- だけが閉じていない。返り値は、行 i で何字目以降の <!-- を文字として扱うか */
+function cmtLimit(L){
+  let li=-1,lc=0;
+  for(let i=L.length-1;i>=0;i--){const k=L[i].lastIndexOf('-->');if(k>=0){li=i;lc=k;break;}}
+  return i=>i<li?Infinity:i===li?lc-3:0;
+}
+/* HTML コメント(<!-- … -->)を 1 行分取り除く。inC:行頭でコメントの中にいるか。
+   コードスパンの中の <!-- と、from 字目以降の <!--(閉じていないもの)はコメントの始まりとしない。<!--> と <!---> はそれだけでコメント。
+   返り値 t:取り除いた後の行、inC:行末でコメントの中にいるか、first:この行で最初にコメントが始まった位置(無ければ -1)、
+   lit:閉じていない <!-- を文字として残したか */
+function stripCmt(l,inC,from){
+  /* m:コメントの部分を空白にした行(画像のドラッグ先を探すときに使う) */
+  let t='',m='',p=0,first=-1,lit=false;
+  const re=/(`+)[\s\S]*?[^`]\1(?!`)|<!--/g,keep=e=>{t+=l.slice(p,e);m+=l.slice(p,e);p=e;},drop=e=>{m+=' '.repeat(e-p);p=e;};
   for(;;){
-    const parts=[[]],starts=[0],blocks=[];let fence=null,math=null,mathAt=-1,cols=0;
-    for(let i=0;i<L.length;i++){
-      const l=L[i];
-      if(fence){if(fence.test(l)) fence=null;parts[parts.length-1].push(l);continue;}
-      if(math){
-        if(looksOutside(l)) blocks[blocks.length-1].odd=true;
-        if(mathClosesAt(l,math)) math=null;
-        parts[parts.length-1].push(l);continue;
+    if(inC){const k=l.indexOf('-->',p);if(k<0){drop(l.length);return {t,m,inC:true,first,lit};}drop(k+3);inC=false;continue;}
+    re.lastIndex=p;const x=re.exec(l);
+    if(!x){keep(l.length);return {t,m,inC:false,first,lit};}
+    if(x[0]!=='<!--'){keep(re.lastIndex);continue;}
+    const q=x.index,e=l.startsWith('>',q+4)?q+5:l.startsWith('->',q+4)?q+6:-1;
+    if(e<0&&q>=from){lit=true;keep(q+4);continue;}
+    keep(q);if(first<0) first=q;
+    if(e>=0){drop(e);continue;}
+    drop(q+4);inC=true;
+  }
+}
+const fenceEnd=f=>new RegExp('^\\s*'+(f[1][0]==='`'?'`':'~')+'{'+f[1].length+',}\\s*$');
+/* 行の種類を 1 回で決める(区切り・コメントの除去・定義の取り出し・画像のドラッグ先の検索で、同じ判定を使うため)。
+   kind[i]:'fence'(コードブロック。``` の行を含む)・'icode'(4 字下げのコード)・'math'(別行立ての数式。始まりと終わりの行を含む)・'text'。
+   cm[i]:コメントにかかわる text の行の stripCmt の結果(start:行頭でコメントの中にいたか)。
+   para[i]:段落の行(参照リンクの定義・引用や箇条書きの続きの行の判定に使う)。fn[i]:脚注の定義の行(続きの行を含む)。
+   ignMath:閉じていない数式の始まりの行(odd が真なら、中に見出しを含む数式の始まりも)。数式として扱わない。
+   odd はスライドの区切りで使う(閉じ忘れた $$ が後ろのスライドまで飲み込まないように)。描画は中に見出しがあっても数式として扱うので、ほかでは使わない。lits:閉じていない <!-- がある行。
+   閉じていない数式は、後ろの行に閉じの $$(\])があるかを先に調べておき、1 回で決める */
+function scanLines(L,odd){
+  const n=L.length,kind=new Array(n).fill('text'),cm=new Array(n),para=new Array(n).fill(false),fn=new Array(n).fill(false);
+  const ignMath=new Set(),lits=new Set(),lim=cmtLimit(L);
+  const nDD=new Int32Array(n+1).fill(-1),nBR=new Int32Array(n+1).fill(-1),nHd=new Int32Array(n+1).fill(-1);
+  for(let i=n-1;i>=0;i--){
+    nDD[i]=L[i].replace(/\\\$/g,'').includes('$$')?i:nDD[i+1];
+    nBR[i]=L[i].includes('\\]')?i:nBR[i+1];
+    nHd[i]=/^#{1,6}\s/.test(L[i])?i:nHd[i+1];
+  }
+  let fence=null,mathEnd=-1,inC=false,cblk=false,prev='blank',inList=false,inCode=false,inTable=false,fnEnd=-1;
+  for(let i=0;i<n;i++){
+    const l=L[i];
+    if(fence){kind[i]='fence';if(fence.test(l)){fence=null;prev='blk';}continue;}
+    if(i<=mathEnd){kind[i]='math';if(i===mathEnd) prev='blk';continue;}
+    if(inC){
+      const r=stripCmt(l,true,lim(i));r.start=true;cm[i]=r;inC=r.inC;
+      if(r.inC) continue;
+      if(isBlank(r.t)){prev=cblk?'blk':prev;continue;}
+      para[i]=true;prev='para';continue;
+    }
+    const isFn=i<fnEnd;
+    if(isBlank(l)){prev='blank';inTable=false;continue;}
+    if(!isFn&&reIndCode.test(l)&&(inCode||(!inList&&prev!=='para'))){kind[i]='icode';inCode=true;continue;}
+    inCode=false;
+    if(!isFn&&reFnDef.test(l)){fnEnd=fnDefEnd(L,i);}
+    if(i<fnEnd){fn[i]=true;}
+    const f=l.match(reFence);
+    if(f){kind[i]='fence';fence=fenceEnd(f);prev='blk';continue;}
+    let lc=l;
+    if(l.indexOf('<!--')>=0){
+      const r=stripCmt(l,false,lim(i));r.start=false;cm[i]=r;if(r.lit) lits.add(i);lc=r.t;
+      if(r.first>=0){
+        const atStart=/^[ >]*$/.test(l.slice(0,r.first));
+        if(r.inC){inC=true;cblk=atStart;if(!atStart){para[i]=true;prev='para';}continue;}
+        if(atStart&&isBlank(lc)){prev='blk';continue;}
       }
-      const f=l.match(reFence);
-      if(f){fence=new RegExp('^\\s*'+(f[1][0]==='`'?'`':'~')+'{'+f[1].length+',}\\s*$');parts[parts.length-1].push(l);continue;}
-      const mo=ignore.has(i)?null:mathOpenAt(l);
-      if(mo){math=mo;mathAt=i;blocks.push({at:i,odd:false});parts[parts.length-1].push(l);continue;}
+    }
+    if(fn[i]){prev='blk';continue;}
+    const mo=mathOpenAt(lc);
+    if(mo){
+      const c=(mo==='$$'?nDD:nBR)[i+1];
+      if(c>=0&&!(odd&&nHd[i+1]>=0&&nHd[i+1]<=c)){kind[i]='math';mathEnd=c;continue;}
+      ignMath.add(i);
+    }
+    if(/^---\s*$/.test(l)){prev='blank';inList=false;inTable=false;continue;}
+    const ind=l.match(/^ */)[0].length;
+    if(reList.test(lc)&&ind<=3){inList=true;para[i]=true;prev='para';continue;}
+    if(isTableStart(L,i)) inTable=true;
+    const blk=reHead.test(lc)||reHr.test(lc)||/^\s*(:::|\|\|\|\s*$|\$\$|\\\[)/.test(lc)||reStepLine.test(lc)||isCmt(lc)||
+      (prev==='para'&&reSetext.test(lc))||(inTable&&lc.includes('|'))||(prev!=='para'&&reRefDef.test(lc));
+    if(ind===0&&(prev==='blank'||blk)) inList=false;
+    para[i]=!blk;prev=blk?'blk':'para';
+  }
+  return {kind,cm,para,fn,ignMath,lits};
+}
+/* スライドの行からコメントを取り除く(コードブロック・4 字下げのコード・別行立ての数式の中は残す)。
+   閉じていない <!-- はコメントとして扱わず、そのまま文字として残す。
+   行頭(字下げと引用の > の後ろ)から始まるコメントは、段落などを区切る 1 行(字下げ+CMT)に置き換える。CMT の行は何も描かない。
+   行の途中から始まるコメントは、その部分だけを除く(段落は続く) */
+const CMT='\u0001';
+const isCmt=l=>/^ *\u0001$/.test(l);
+function stripComments(L){
+  const S=scanLines(L),out=[];let blk=null;
+  for(let i=0;i<L.length;i++){
+    const l=L[i],r=S.cm[i];
+    if(S.kind[i]!=='text'||!r){out.push(l);continue;}
+    if(!r.start) blk=r.first>=0&&/^[ >]*$/.test(l.slice(0,r.first))?l.slice(0,r.first):null;
+    if(blk!==null){
+      const cm=blk+CMT;
+      if(out[out.length-1]!==cm) out.push(cm);
+      if(!isBlank(r.start?r.t:r.t.slice(blk.length))) out.push(r.t);
+    }else if(!(isBlank(r.t)&&(r.start||!isBlank(l)))) out.push(r.t);
+    if(!r.inC) blk=null;
+  }
+  return out;
+}
+/* 区切りの行(sep)で分ける。コードブロック・4 字下げのコード・別行立て数式・コメントの中(と useCols が真なら ::: の中)は区切らない */
+function splitOutside(L,sep,useCols){
+  const S=scanLines(L,true),parts=[[]],starts=[0];let cols=0;
+  for(let i=0;i<L.length;i++){
+    const l=L[i];
+    if(S.kind[i]==='text'&&!(S.cm[i]&&(S.cm[i].start||S.cm[i].inC))){
       if(useCols){
         if(/^\s*:::\s*\S/.test(l)) cols++;
         else if(cols>0&&/^\s*:::\s*$/.test(l)) cols--;
       }
       if(!cols&&sep.test(l)){parts.push([]);starts.push(i+1);continue;}
-      parts[parts.length-1].push(l);
     }
-    /* 中に見出しを含む数式は、閉じ忘れた $$ が後ろの数式の $$ と組になったものと考え、
-       その始まりを閉じ忘れとする(閉じ忘れが 2 つあって数が偶数に見える場合もこれで見つかる)。
-       それが無く、最後に閉じていない始まりが残っていれば、それを閉じ忘れとする */
-    const odd=blocks.find(x=>x.odd);
-    if(odd){ignore.add(odd.at);continue;}
-    if(math){ignore.add(mathAt);continue;}
-    return {parts,starts,unclosed:[...ignore].sort((x,y)=>x-y)};
+    parts[parts.length-1].push(l);
   }
+  return {parts,starts,unclosed:[...S.ignMath].sort((x,y)=>x-y),unclosedCmt:[...S.lits].sort((x,y)=>x-y)};
 }
 function splitSteps(L){
   return splitOutside(L,reStepLine,true).parts;
@@ -5588,13 +5702,75 @@ function stepBlocks(L){
 /* COVER:描いているスライドが表紙(最初の行が「# 」)か。NEST:段組・囲み枠・引用・箇条書きの中を描いている深さ。
    表紙の一番外側(NEST が 0)の「- 」の箇条書きだけを、所属と名前の欄(authors)として描く */
 let COVER=false,NEST=0;
+const reRefDef=/^ {0,3}\[((?:[^\]\\]|\\.)+)\]:[ \t]*(<[^>\n]*>|\S+)(?:[ \t]+("[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/;
+const reFnDef=/^ {0,3}\[\^([^\]\s]+)\]:[ \t]?(.*)$/;
+const refKey=s=>s.trim().replace(/\s+/g,' ').toLowerCase().toUpperCase();
+const unEsc=s=>s.replace(/\\([!-\/:-@\[-`{-~])/g,'$1');
+const unAngle=u=>/^<[\s\S]*>$/.test(u)?u.slice(1,-1).replace(/[ \t]/g,c=>c===' '?'%20':'%09'):u;
+const unQuote=t=>t?t.slice(1,-1):'';
+let REFS=Object.create(null);
+/* 脚注の定義の終わり(その次の行番号)。4 字下げした行が続きの行。空行をはさんで 4 字下げした行が続けば、それも続き */
+function fnDefEnd(L,i){
+  let j=i+1;
+  for(;;){
+    if(j<L.length&&/^(?: {4}|\t)\S/.test(L[j])){j++;continue;}
+    let k=j;while(k<L.length&&isBlank(L[k])) k++;
+    if(k>j&&k<L.length&&/^(?: {4}|\t)\S/.test(L[k])){j=k;continue;}
+    return j;
+  }
+}
+/* 参照リンクの定義([名前]: URL "題")と脚注の定義([^名前]: 本文)を行から除く。
+   参照リンクの定義は refs(原稿全体で共有。同じ名前は先に書いたものを使う)に、脚注の定義は FN.defs(そのスライドだけ)に入れる。
+   参照リンクの定義は段落の途中には書けない(前の行が段落の行でないときだけ)。題は次の行に書いてもよい */
+function takeDefs(L,refs){
+  const S=scanLines(L),out=[];
+  for(let i=0;i<L.length;i++){
+    const l=L[i];
+    if(S.kind[i]!=='text'){out.push(l);continue;}
+    let m=l.match(reFnDef);
+    if(m&&S.fn[i]){
+      const j=fnDefEnd(L,i),body=[m[2]].concat(L.slice(i+1,j).map(u=>u.replace(/^(?: {4}|\t)/,'')));
+      if(FN&&!FN.defs.has(m[1])) FN.defs.set(m[1],body.join('\n'));
+      i=j-1;continue;
+    }
+    m=l.match(reRefDef);
+    if(m&&!(i>0&&S.para[i-1])){
+      let ti=m[3];
+      if(!ti&&i+1<L.length){const t=L[i+1].match(/^\s*("[^"]*"|'[^']*'|\([^)]*\))\s*$/);if(t){ti=t[1];i++;}}
+      const k=refKey(m[1]);
+      if(refs&&!(k in refs)) refs[k]={url:unAngle(unEsc(m[2])),title:unEsc(unQuote(ti))};
+      continue;
+    }
+    out.push(l);
+  }
+  return out;
+}
+/* FN:描いているスライドの脚注。defs:名前→本文、used:名前→{n:番号,s:出る段階}、order:番号順。
+   番号はスライドごとに、本文で初めて参照した順に 1 から振る。脚注は、最初に参照した区間と同じ段階で出す。
+   注の本文の中で参照した注は、その注と同じ段階で出す。注の中の画像は位置を指定できない(NOPOS) */
+let FN=null,NOPOS=false;
+function footnotes(){
+  if(!FN||!FN.order.length) return '';
+  const keep=SEGSTEP;let h='';
+  try{
+    NOPOS=true;
+    for(let k=0;k<FN.order.length;k++){
+      const f=FN.order[k];SEGSTEP=f.s;
+      const body=FN.defs.get(f.k).trim().split(/\n[ \t]*\n\s*/).map(q=>inline(q.trim())).join('<br>');
+      h+='<div class="fn'+(f.s?' step" data-s="'+f.s+'"':'"')+'><sup>'+f.n+'</sup> '+body+'</div>';
+    }
+  }finally{SEGSTEP=keep;NOPOS=false;}
+  return '<div class="fns">'+h+'</div>';
+}
 function renderSlide(src){
   STEPN=0;SEGSTEP=0;NEST=0;
-  const L=src.split('\n'),first=L.find(l=>!isBlank(l));
-  COVER=!!first&&/^#\s/.test(first);
-  const h=stepBlocks(L);
-  COVER=false;
-  return {html:h,maxStep:STEPN};
+  FN={defs:new Map(),used:new Map(),order:[]};
+  try{
+    const L=takeDefs(stripComments(src.replace(/[\u0001-\u0003]/g,'').split('\n')),null),first=L.find(l=>!isBlank(l)&&!isCmt(l));
+    COVER=!!first&&/^#\s/.test(first);
+    const h=stepBlocks(L)+footnotes();
+    return {html:h,maxStep:STEPN,title:COVER};
+  }finally{COVER=false;FN=null;}
 }
 function applyStep(el,step){
   el.querySelectorAll('.step,.layer img.pos[data-s]').forEach(e=>{e.style.visibility=+e.dataset.s>step?'hidden':'';});
@@ -5622,18 +5798,60 @@ const imgMap=o=>{const m=Object.create(null);if(o&&typeof o==='object') for(cons
 const hasImg=k=>Object.prototype.hasOwnProperty.call(IMAGES,k);
 let IMAGES=imgMap(null);
 function attrs(a){const o={};if(a) a.replace(/(\w+)\s*=\s*(-?\d+(?:\.\d+)?)/g,(m,k,v)=>{o[k]=+v;});return o;}
-function imgTag(src,alt,ref,at){
-  const o=attrs(at);
-  if(o.x!==undefined&&o.y!==undefined&&o.w!==undefined)
-    return '<img class="pos" draggable="false" src="'+esc(src)+'" alt="'+alt+'" data-ref="'+esc(ref)+'" data-attrs="'+esc(at||'')+'" style="left:'+o.x+'px;top:'+o.y+'px;width:'+o.w+'px">';
-  return '<img draggable="false" src="'+esc(src)+'" alt="'+alt+'"'+(o.w?' style="width:'+o.w+'px"':'')+'>';
+function imgTag(src,alt,ref,at,title){
+  const o=attrs(at),ti=title?' title="'+esc(decEnts(title))+'"':'';
+  if(!NOPOS&&o.x!==undefined&&o.y!==undefined&&o.w!==undefined)
+    return '<img class="pos" draggable="false" src="'+esc(src)+'" alt="'+alt+'"'+ti+' data-ref="'+esc(ref)+'" data-attrs="'+esc(at||'')+'" style="left:'+o.x+'px;top:'+o.y+'px;width:'+o.w+'px">';
+  return '<img draggable="false" src="'+esc(src)+'" alt="'+alt+'"'+ti+(o.w?' style="width:'+o.w+'px"':'')+'>';
+}
+/* 文字参照を展開する(名前付きのものはブラウザの表で引く) */
+const reEnt=/&(?:#[xX][0-9a-fA-F]{1,6}|#[0-9]{1,7}|[A-Za-z][A-Za-z0-9]{1,31});/g;
+const entBox=document.createElement('textarea');
+/* 名前付きのものは、表に無い名前(&copyx; のように、旧式の &copy の後ろに文字が続くもの)を展開しない。
+   制御文字になるもの(&#1; など)は U+FFFD にする */
+const decEnt=e=>{
+  if(e[1]==='#'){
+    const c=e[2]==='x'||e[2]==='X'?parseInt(e.slice(3,-1),16):parseInt(e.slice(2,-1),10);
+    const bad=(c>=0xd800&&c<=0xdfff)||(c>=0xfdd0&&c<=0xfdef)||(c&0xffff)===0xffff||(c&0xffff)===0xfffe||c<=8||c===11||(c>=14&&c<=31)||(c>=127&&c<=159)||c>0x10ffff;
+    return bad?'�':String.fromCodePoint(c);
+  }
+  entBox.innerHTML=e;const d=entBox.value;
+  return d===e||[...d].length>2?e:d;
+};
+const decEnts=t=>t.replace(reEnt,decEnt);
+function aOpen(u,title,raw){
+  return '<a href="'+esc(safeUrl(raw?u:decEnts(u)))+'"'+(title?' title="'+esc(decEnts(title))+'"':'')+' target="_blank" rel="noopener">';
+}
+/* URL だけを書いたものの末尾から、文の区切りの記号と、対になっていない ) を外す。返り値は [URL, 外した文字] */
+function trimUrl(u){
+  let rest='';
+  for(;;){
+    const m=u.match(/[?!.,:;*_~'"]$|&[A-Za-z0-9]+;$/);
+    if(m){rest=m[0]+rest;u=u.slice(0,-m[0].length);continue;}
+    if(u.endsWith(')')&&(u.split('(').length<u.split(')').length)){rest=')'+rest;u=u.slice(0,-1);continue;}
+    break;
+  }
+  if(/^(?:https?:\/\/|www\.)$/i.test(u)) return ['',''];
+  return [u,rest];
+}
+/* 文字列の中の、URL だけを書いたもの(https://…・www.…)をリンクにする。
+   ドメイン名は英数字と _ . - だけとし、続く / ? # からの部分は、日本語の文に続けて書けるよう全角の記号(、。「」()など)の前で終える */
+function linkBare(t,put){
+  return t.replace(/(?<![\w\/.:@&-])((?:https?:\/\/|www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,u=>{
+    const [v,rest]=trimUrl(u);
+    if(!v) return u;
+    return put(aOpen(/^www\./i.test(v)?'http://'+v:v,'')+esc(decEnts(v))+'</a>',v)+rest;
+  });
 }
 const reInline=/(`+)([\s\S]*?[^`])\1(?!`)|\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$(?!\s)((?:\\[\s\S]|[^$\\])+?)(?<!\s)\$(?!\d)|\\([\\`*_{}\[\]()#+\-.!$|<>~])/g;
 function inline(s){
   /* ph:置き換えた HTML、raw:その元の文字列(画像の説明やリンクの URL では元の文字列に戻して使う) */
   const ph=[],raw=[];
-  const put=(h,r)=>{ph.push(h);raw.push(r===undefined?'':r);return '\u0000'+(ph.length-1)+'\u0000';};
+  /* org:エスケープを外す前の文字列(参照リンクの名前の照合に使う) */
+  const org=[];
+  const put=(h,r,o)=>{ph.push(h);raw.push(r===undefined?'':r);org.push(o===undefined?raw[raw.length-1]:o);return '\u0000'+(ph.length-1)+'\u0000';};
   const unph=t=>t.replace(/\u0000(\d+)\u0000/g,(a,n)=>raw[+n]);
+  const unphO=t=>t.replace(/\u0000(\d+)\u0000/g,(a,n)=>org[+n]);
   s=s.replace(/\u0000/g,'');
   s=s.replace(reInline,(all,bt,code,dd,br,pr,sd,ch)=>{
     if(bt!==undefined) return put('<code>'+esc(code.replace(/^ (.*) $/s,'$1'))+'</code>',all);
@@ -5641,25 +5859,65 @@ function inline(s){
     if(br!==undefined) return put(tex(br,true),all);
     if(pr!==undefined) return put(tex(pr,false),all);
     if(sd!==undefined) return put(tex(sd,false),all);
-    return put(esc(ch),ch);
+    return put(esc(ch),ch,all);
   });
-  s=s.replace(/!\[([^\]]*)\]\[([^\]\s]+)\](\{[^}\n]*\})?/g,(a,alt,ref,at)=>{
-    ref=unph(ref);
-    if(!hasImg(ref)) return put('<span class="texerr">[画像なし: '+esc(ref)+']</span>',a);
-    return put(imgTag(IMAGES[ref],esc(unph(alt)),'ref:'+ref,at&&unph(at)),a);
-  });
-  s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)(\{[^}\n]*\})?/g,(a,alt,u,at)=>{
+  /* 行末の \ は改行(\ は出さない) */
+  s=s.replace(/\\\n/g,'\n');
+  /* 山括弧の自動リンク <https://…>・<名前@example.com>(中の文字参照は展開しない) */
+  s=s.replace(/(?<!\]\(\s*)<([a-zA-Z][a-zA-Z0-9+.-]{1,31}:[^\s<>]*)>/g,(a,u)=>put(aOpen(unph(u),'',true)+esc(unph(u))+'</a>',a));
+  s=s.replace(/<([a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)>/g,
+    (a,u)=>put(aOpen('mailto:'+unph(u),'',true)+esc(unph(u))+'</a>',a));
+  /* 画像。URL の画像、名前で参照する画像(貼り付けた画像の名前を先に探し、無ければ参照リンクの定義)の順に置き換える */
+  const alt=t=>esc(decEnts(unph(t)));
+  s=s.replace(/!\[([^\]]*)\]\(\s*(<[^>\n]*>|[^)\s]+)(?:\s+("[^"]*"|'[^']*'|\([^)]*\)))?\s*\)(\{[^}\n]*\})?/g,(a,al,u,ti,at)=>{
     u=unph(u);
-    return put(imgTag(safeUrl(u,true),esc(unph(alt)),'url:'+u,at&&unph(at)),a);
+    return put(imgTag(safeUrl(decEnts(unAngle(u)),true),alt(al),'url:'+u,at&&unph(at),unph(unQuote(ti))),a);
   });
-  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(a,t,u)=>
-    put('<a href="'+esc(safeUrl(unph(u)))+'" target="_blank" rel="noopener">','')+t+put('</a>',''));
+  s=s.replace(/!\[([^\]]*)\]\[([^\]\n]+)\](\{[^}\n]*\})?/g,(a,al,ref0,at)=>{
+    const ref=unph(ref0);
+    if(hasImg(ref)) return put(imgTag(IMAGES[ref],alt(al),'ref:'+ref,at&&unph(at)),a);
+    const d=REFS[refKey(unphO(ref0))];
+    if(d) return put(imgTag(safeUrl(decEnts(d.url),true),alt(al),'def:'+ref,at&&unph(at),d.title),a);
+    return put('<span class="texerr">[画像なし: '+esc(ref)+']</span>',a);
+  });
+  /* ![名前][]・![名前](貼り付けた画像の名前か、参照リンクの定義があるものだけ) */
+  s=s.replace(/!\[([^\]\n]+)\](?:\[\])?(\{[^}\n]*\})?(?![(\[])/g,(a,al,at)=>{
+    const nm=unph(al);
+    if(hasImg(nm)) return put(imgTag(IMAGES[nm],alt(al),'sc:'+nm,at&&unph(at)),a);
+    const d=REFS[refKey(unphO(al))];
+    return d?put(imgTag(safeUrl(decEnts(d.url),true),alt(al),'sc:'+nm,at&&unph(at),d.title),a):a;
+  });
+  /* 脚注の参照 [^名前](同じスライドに定義があるものだけ) */
+  if(FN) s=s.replace(/\[\^([^\]\s]+)\]/g,(a,k)=>{
+    k=unph(k);
+    if(!FN.defs.has(k)) return a;
+    let u=FN.used.get(k);
+    if(!u){u={k,n:FN.order.length+1,s:SEGSTEP};FN.used.set(k,u);FN.order.push(u);}
+    return put('<sup class="fnref">'+u.n+'</sup>',a);
+  });
+  /* URL だけを書いたもの(https://…・www.…)。リンクの書き方の [..](..)・[..][..] と、定義のある [名前] の中は除く */
+  s=s.replace(/(!?\[([^\]\n]*)\](\([^)\n]*\)|\[[^\]\n]*\])?)|(?<![\w\/.:@&-])((?:https?:\/\/|www\.)[A-Za-z0-9_.-]+(?::\d+)?(?:[\/?#][^\s<\u0000　-〿＀-￯]*)?)/g,(a,lk,inner,tail,u)=>{
+    if(lk!==undefined) return tail!==undefined||REFS[refKey(unphO(inner))]?a:a[0]==='!'?'!['+linkBare(inner,put)+']':'['+linkBare(inner,put)+']';
+    return linkBare(u,put);
+  });
+  s=s.replace(/\[([^\]]+)\]\(\s*(<[^>\n]*>|[^)\s]+)(?:\s+("[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g,(a,t,u,ti)=>
+    put(aOpen(unAngle(unph(u)),unph(unQuote(ti))),'')+t+put('</a>',''));
+  /* 参照リンク [文字][名前]・[名前][]・[名前](定義があるものだけ) */
+  s=s.replace(/\[((?:[^\[\]\n\\]|\\.)+)\](?:\[([^\]\n]*)\])?(?![(\[{:])/g,(a,t,lab)=>{
+    const d=REFS[refKey(unphO(lab?lab:t))];
+    if(!d) return a;
+    return put(aOpen(d.url,d.title),'')+t+put('</a>','');
+  });
+  /* 文字参照(&amp;・&copy;・&#x41; など)。展開した文字は、強調などの記号として扱わない */
+  s=s.replace(reEnt,e=>{const d=decEnt(e);return d===e?e:put(esc(d),e);});
   s=esc(s);
   s=s.replace(/\[([^\]\n]+)\]\{\.(red|yellow|blue)\}/g,'<span class="c-$2">$1</span>');
   s=s.replace(/(^|[^\w+])\+\+(?![\s+])([\s\S]+?)(?<![\s+])\+\+(?![\w+])/g,'$1<u>$2</u>');
   s=s.replace(/\*\*(?!\s)([\s\S]+?)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/(?<![\p{L}\p{N}_])__(?![\s_])([\s\S]+?)(?<![\s_])__(?![\p{L}\p{N}_])/gu,'<strong>$1</strong>');
   s=s.replace(/~~(?!\s)([\s\S]+?)~~/g,'<del>$1</del>');
   s=s.replace(/\*(?![\s*])([^*\n]+?)\*/g,'<em>$1</em>');
+  s=s.replace(/(?<![\p{L}\p{N}_])_(?![\s_])([^_\n]+?)(?<![\s_])_(?![\p{L}\p{N}_])/gu,'<em>$1</em>');
   s=s.replace(/[ \t]*\n[ \t]*/g,'<br>');
   for(let k=0;k<3&&s.indexOf('\u0000')>=0;k++) s=s.replace(/\u0000(\d+)\u0000/g,(a,n)=>ph[+n]);
   return s;
@@ -5670,9 +5928,12 @@ const reHead=/^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/;
 const reList=/^( *)([-*+]|\d{1,9}[.)])(?:[ \t]+(.*))?$/;
 const reTableSep=/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
 const isBlank=l=>/^\s*$/.test(l);
+const reHr=/^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;   /* 区切り線(*** ___ など。--- だけの行はスライドの区切り) */
+const reSetext=/^ {0,3}=+[ \t]*$/;                    /* 段落の次の行の === で、その段落を見出し(#)にする */
+const reIndCode=/^(?: {4}|\t)/;                       /* 4 字下げのコードブロック */
 function startsBlock(L,i){
   const l=L[i];
-  return /^\s*:::/.test(l)||reFence.test(l)||reHead.test(l)||/^\s*>/.test(l)||/^\s*(\$\$|\\\[)/.test(l)||reList.test(l)||isTableStart(L,i);
+  return isCmt(l)||/^\s*:::/.test(l)||reFence.test(l)||reHead.test(l)||reHr.test(l)||/^\s*>/.test(l)||/^\s*(\$\$|\\\[)/.test(l)||reList.test(l)||isTableStart(L,i);
 }
 function isTableStart(L,i){
   return L[i].includes('|')&&i+1<L.length&&L[i+1].includes('-')&&reTableSep.test(L[i+1]);
@@ -5720,12 +5981,28 @@ function list(L){
     }
   }
   for(const it of items){
+    const n=it.lines.length;
     while(it.lines.length&&isBlank(it.lines[it.lines.length-1])) it.lines.pop();
-    it.loose=it.lines.some(isBlank);
+    it.trail=n-it.lines.length>(it.lines.length?0:1);   /* 次の項目との間に空行がある(中身の無い項目の印の行は数えない) */
   }
   const tag=ordered?'ol':'ul';
   const start=ordered&&parseInt(m0[2],10)!==1?' start="'+parseInt(m0[2],10)+'"':'';
-  return '<'+tag+start+'>'+nested(()=>items.map(it=>'<li>'+blocks(it.lines,!it.loose)+'</li>').join(''))+'</'+tag+'>';
+  /* 項目の間か、項目の中の直接の要素の間に空行が 1 つでもあれば、箇条書き全体の項目を段落(<p>)として描く(CommonMark)。
+     そのため各項目の段落はいったん印(PARA_A…PARA_B)で囲んで描き、全項目を描いた後で <p> にするか外すかを決める。
+     先頭が [ ]・[x] の項目は、チェックボックスを付ける */
+  const html=nested(()=>items.map(it=>{
+    const tm=(it.lines[0]||'').match(/^\[([ xX])\][ \t]+(?=\S)/);
+    if(tm){it.lines[0]=it.lines[0].slice(tm[0].length);it.box='<input type="checkbox" disabled'+(tm[1]===' '?'':' checked')+'>';}
+    it.info={gap:false};
+    return blocks(it.lines,'defer',it.info);
+  }));
+  const loose=items.some((it,k)=>it.info.gap||(it.trail&&k<items.length-1));
+  const reP=new RegExp(PARA_A+'([\\s\\S]*?)'+PARA_B,'g');
+  return '<'+tag+start+'>'+items.map((it,k)=>{
+    const b=html[k].replace(reP,loose?'<p>$1</p>':'$1');
+    if(!it.box) return '<li>'+b+'</li>';
+    return '<li class="task">'+(b.startsWith('<p>')?'<p>'+it.box+b.slice(3):it.box+b)+'</li>';
+  }).join('')+'</'+tag+'>';
 }
 function nested(f){NEST++;try{return f();}finally{NEST--;}}
 /* 表紙の所属と名前:外側の「- 」が所属、字下げした「- 」がその所属の人の名前。
@@ -5899,11 +6176,33 @@ function collectFenced(L,start){
   }
   return {body,end:j};
 }
-function blocks(L,tight){
-  const out=[];let i=0;
+/* 行の並び buf(引用の中身・箇条書き)の最後の行が段落の行か。箇条書きの印の行は、印を除いた中身で調べる */
+function lazyOk(buf){
+  if(!buf.length) return false;
+  const B=buf.map(u=>{const q=u.match(reList);return q?' '.repeat(q[1].length)+(q[3]||''):u;}),k=B.length-1;
+  if(isBlank(B[k])) return false;
+  const S=scanLines(B);
+  return S.kind[k]==='text'&&S.para[k]&&!(S.cm[k]&&S.cm[k].inC);
+}
+/* tight:真なら段落を <p> で囲まない。'defer' なら段落を印(PARA_A…PARA_B)で囲み、
+   info.gap に、直接の要素の間に空行があったかを入れる(箇条書きの項目で使う) */
+const PARA_A='\u0002',PARA_B='\u0003';
+function blocks(L,tight,info){
+  const out=[];let i=0,blank=false;
+  const para=h=>tight==='defer'?PARA_A+h+PARA_B:tight?h:'<p>'+h+'</p>';
   while(i<L.length){
     const l=L[i];let m;
-    if(isBlank(l)){i++;continue}
+    if(isBlank(l)){if(out.length) blank=true;i++;continue}
+    if(blank&&info) info.gap=true;
+    blank=false;
+    if(isCmt(l)){i++;continue}
+    if(reIndCode.test(l)){
+      const buf=[];let j=i;
+      while(j<L.length&&(isBlank(L[j])||reIndCode.test(L[j]))) buf.push(L[j++].replace(reIndCode,''));
+      while(isBlank(buf[buf.length-1])) buf.pop();
+      out.push(codeBlock(buf.join('\n'),''));
+      i=j;continue;
+    }
     if(m=l.match(reFence)){
       const mk=m[1];const buf=[];let j=i+1;
       const close=new RegExp('^\\s*'+(mk[0]==='`'?'`':'~')+'{'+mk.length+',}\\s*$');
@@ -5917,7 +6216,7 @@ function blocks(L,tight){
       if(k>=0){
         out.push(texDisplay(rest.slice(0,k)));
         const after=rest.slice(k+closeTok.length);
-        if(!isBlank(after)) out.push(tight?inline(after.trim()):'<p>'+inline(after.trim())+'</p>');
+        if(!isBlank(after)) out.push(para(inline(after.trim())));
         i++;continue;
       }
       const buf=[rest];let j=i+1;
@@ -5933,7 +6232,7 @@ function blocks(L,tight){
       out.push(texDisplay(buf.join('\n')));
       if(j<L.length){
         const after=L[j].slice(L[j].indexOf(closeTok)+closeTok.length);
-        if(!isBlank(after)) out.push(tight?inline(after.trim()):'<p>'+inline(after.trim())+'</p>');
+        if(!isBlank(after)) out.push(para(inline(after.trim())));
       }
       i=j+1;continue;
     }
@@ -5963,9 +6262,16 @@ function blocks(L,tight){
       out.push('<h'+n+'>'+inline(m[2])+'</h'+n+'>');
       i++;continue;
     }
+    if(reHr.test(l)){out.push('<hr>');i++;continue;}
     if(/^\s*>/.test(l)){
+      /* > の無い行も、引用の中の段落の続きなら引用に入れる */
       const buf=[];
-      while(i<L.length&&/^\s*>/.test(L[i])) buf.push(L[i++].replace(/^\s*> ?/,''));
+      while(i<L.length){
+        if(/^\s*>/.test(L[i])){buf.push(L[i++].replace(/^\s*> ?/,''));continue;}
+        /* 続けられるのは、引用の最後の行が段落の行のときだけ。続きの行の === は見出しの印にしない */
+        if(isBlank(L[i])||startsBlock(L,i)||!lazyOk(buf)) break;
+        buf.push(reSetext.test(L[i])?L[i].replace(/=/g,'&#61;'):L[i]);i++;
+      }
       out.push('<blockquote>'+nested(()=>blocks(buf,false))+'</blockquote>');
       continue;
     }
@@ -5975,39 +6281,54 @@ function blocks(L,tight){
     if(reList.test(l)){
       const base=l.match(reList)[1].length, ord=/\d/.test(l.match(reList)[2]);
       const sameList=v=>{const q=v.match(reList);return !!q&&q[1].length<=base+1&&/\d/.test(q[2])===ord;};
+      /* cind:今の項目の中身の字下げ。empty:今の項目が印だけ(中身が無い)か */
+      const item=v=>{const q=v.match(reList);return {cind:q[1].length+q[2].length+1,empty:!(q[3]||'').trim()};};
+      let {cind,empty}=item(l);
       const buf=[L[i++]];
       while(i<L.length){
         const u=L[i];
         if(isBlank(u)){
           let j=i+1;while(j<L.length&&isBlank(L[j]))j++;
-          if(j<L.length&&(L[j].match(/^ */)[0].length>base+1||sameList(L[j]))){
+          /* 印だけの項目の後ろに空行があれば、その項目は空のまま終わる(次の項目が続くときだけ箇条書きが続く) */
+          if(j<L.length&&((!empty&&L[j].match(/^ */)[0].length>base+1)||sameList(L[j]))){
             for(;i<j;i++) buf.push(L[i]);
             continue;
           }
           break;
         }
         const ind=u.match(/^ */)[0].length;
+        if(ind<=base+1&&reHr.test(u)) break;
         if(ind<=base&&!reList.test(u)&&startsBlock(L,i)) break;
         if(ind<=base+1&&reList.test(u)&&!sameList(u)) break;
+        if(ind<=base+1&&sameList(u)) ({cind,empty}=item(u));
+        else if(ind<cind&&!reList.test(u)&&!isCmt(u)){
+          /* 字下げの足りない行は、項目の最後の行が段落の行のときだけ続きの行にする。続きの行の === は見出しの印にしない */
+          if(!lazyOk(buf)) break;
+          buf.push(reSetext.test(u)?u.replace(/=/g,'&#61;'):u);i++;continue;
+        }
+        empty=false;
         buf.push(u);i++;
       }
       out.push(COVER&&NEST===0&&!ord?authors(buf):list(buf));
       continue;
     }
-    const buf=[l.replace(/\s+$/,'')];i++;
-    while(i<L.length&&!isBlank(L[i])&&!startsBlock(L,i)) buf.push(L[i++].replace(/\s+$/,''));
+    const buf=[l.replace(/\s+$/,'')];i++;let setext=false;
+    while(i<L.length&&!isBlank(L[i])&&!startsBlock(L,i)){
+      if(reSetext.test(L[i])){setext=true;i++;break;}
+      buf.push(L[i++].replace(/\s+$/,''));
+    }
     const h=inline(buf.join('\n').trim());
-    out.push(tight?h:'<p>'+h+'</p>');
+    out.push(setext?'<h1>'+h+'</h1>':para(h));
   }
   return out.join(tight?'':'\n');
 }
 
 /* ---------- スライド分割 ---------- */
-let UNCLOSED=[];   /* 閉じていない別行立て数式の始まりの行(0 始まり) */
+let UNCLOSED=[],UNCLOSED_CMT=[];   /* 閉じていない別行立て数式・<!-- の始まりの行(0 始まり) */
 function split(text){
   const L=text.replace(/\r\n?/g,'\n').split('\n');
   const r=splitOutside(L,/^---\s*$/,false);
-  UNCLOSED=r.unclosed;
+  UNCLOSED=r.unclosed;UNCLOSED_CMT=r.unclosedCmt;
   return r.parts.map((p,k)=>({src:p.join('\n'),start:r.starts[k]}));
 }
 
@@ -6016,13 +6337,15 @@ let slides=[],cur=0,showIdx=0,theme='white';
 function build(){
   MM_CODE.clear();
   slides=split(ed.value);
-  setWarn('syntax',UNCLOSED.length?'閉じていない $$ または \\[ があります('+UNCLOSED.map(n=>(n+1)+' 行目').join('、')+')':'');
+  const lines=a=>a.map(n=>(n+1)+' 行目').join('、');
+  setWarn('syntax',[UNCLOSED.length?'閉じていない $$ または \\[ があります('+lines(UNCLOSED)+')':'',
+    UNCLOSED_CMT.length?'閉じていない <!-- があります('+lines(UNCLOSED_CMT)+')':''].filter(Boolean).join('。'));
   MACROS={};
+  REFS=Object.create(null);
+  for(const s of slides) takeDefs(stripComments(s.src.split('\n')),REFS);
   for(const s of slides){
     const r=renderSlide(s.src);
-    s.html=r.html;s.maxStep=r.maxStep;
-    const first=s.src.split('\n').find(l=>!isBlank(l));
-    s.title=!!first&&/^#\s/.test(first);
+    s.html=r.html;s.maxStep=r.maxStep;s.title=r.title;
   }
   if(cur>=slides.length) cur=slides.length-1;
 }
@@ -6261,12 +6584,11 @@ function replaceRange(a,b,text){
 const reEsc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 /* コードブロックとコードスパンの中を同じ長さの空白に置き換えた文字列(位置は元と同じ) */
 function maskCode(t){
-  const L=t.split('\n');let fence=null;
+  /* コードブロック・4 字下げのコード・別行立ての数式・コメント・コードスパン・脚注の定義(注の中の画像は位置を指定できない)を伏せる */
+  const L=t.split('\n'),S=scanLines(L),blank=u=>' '.repeat(u.length);
   for(let i=0;i<L.length;i++){
-    const l=L[i];
-    if(fence){if(fence.test(l)) fence=null;L[i]=' '.repeat(l.length);continue;}
-    const f=l.match(reFence);
-    if(f){fence=new RegExp('^\\s*'+(f[1][0]==='`'?'`':'~')+'{'+f[1].length+',}\\s*$');L[i]=' '.repeat(l.length);}
+    if(S.kind[i]!=='text'||S.fn[i]) L[i]=blank(L[i]);
+    else if(S.cm[i]) L[i]=S.cm[i].m;
   }
   return L.join('\n').replace(/(`+)([\s\S]*?[^`])\1(?!`)/g,m=>m.replace(/[^\n]/g,' '));
 }
@@ -6274,11 +6596,12 @@ function findToken(i,ref,at,nth){
   nth=nth||0;
   const [a,b]=slideRange(i),seg=ed.value.slice(a,b),masked=maskCode(seg);
   const kind=ref.slice(0,3),name=ref.slice(4).replace(/&amp;/g,'&');
-  const body=kind==='ref'?'\\]\\['+reEsc(name)+'\\]':'\\]\\('+reEsc(name)+'\\)';
-  const re=new RegExp('!\\[[^\\]\\n]*'+body+'(\\{[^}\\n]*\\})?','g');
+  const body=kind==='url'?'\\]\\(\\s*'+reEsc(name)+'(?:\\s+(?:"[^"]*"|\'[^\']*\'|\\([^)]*\\)))?\\s*\\)':'\\]\\['+reEsc(name)+'\\]';
+  /* sc:![名前][]・![名前] の形 */
+  const rx=ref.startsWith('sc:')?new RegExp('!\\['+reEsc(ref.slice(3))+'\\](?:\\[\\])?(\\{[^}\\n]*\\})?(?![(\\[])','g'):new RegExp('!\\[[^\\]\\n]*'+body+'(\\{[^}\\n]*\\})?','g');
   let m;
   /* 表示される画像だけを数える(draw の data-dup と同じ数え方)ため、コードの中を除いた文字列で探す */
-  while((m=re.exec(masked))) if((m[1]||'')===at&&nth--===0) return {s:a+m.index,e:a+m.index+m[0].length,attr:m[1]||''};
+  while((m=rx.exec(masked))) if((m[1]||'')===at&&nth--===0) return {s:a+m.index,e:a+m.index+m[0].length,attr:m[1]||''};
   return null;
 }
 let sel=null,pendingSel=null,drag=null;
